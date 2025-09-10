@@ -1,0 +1,2 @@
+* xref:index.adoc[]
+* xref:extra-page.adoc[Extra page]

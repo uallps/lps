@@ -1,0 +1,5 @@
+= Extras (componente)
+
+Esta es la página principal del componente `extras`.
+
+include::../../../../modules/extras/pages/index.adoc[]

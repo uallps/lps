@@ -1,5 +1,6 @@
 name: project-name
 version: ~
-title: Project Name
+title: Líneas de Productos Software
 nav:
   - modules/ROOT/nav.adoc
+  - modules/extras/nav.adoc

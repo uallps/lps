@@ -1,0 +1,6 @@
+= Extras
+:page-title: Extras index
+
+Bienvenido al módulo Extras.
+
+* xref:extra-page.adoc[Ir a la página extra]
