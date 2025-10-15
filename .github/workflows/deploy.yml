@@ -25,7 +25,8 @@ jobs:
         with:
           node-version: "18"
       - name: Install Antora
-        run: npm install -g @antora/cli @antora/site-generator-default
+        run: |
+          npm install -g @antora/cli @antora/site-generator asciidoctor asciidoctor-kroki
       - name: Generate site
         run: antora antora-playbook.yml
       - name: Setup Pages
