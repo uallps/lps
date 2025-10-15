@@ -1,13 +1,17 @@
 site:
-  title: Docs Site
+  title: Líneas de Productos Software
   start_page: project-name::index.adoc
 content:
   sources:
     - url: .
       branches: HEAD
-    - url: components/extras
-      branches: HEAD
 ui:
   bundle:
-    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable ## Default
     snapshot: true
+  supplemental_files: ./supplemental-ui
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+  extensions:
+    - asciidoctor-kroki

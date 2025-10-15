@@ -130,3 +130,6 @@ docker-compose.override.yml
 # Misc
 coverage/
 reports/
+
+# Generated HTML files
+modules/fundamentos/pages/*.html

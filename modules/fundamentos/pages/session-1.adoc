@@ -1,0 +1,73 @@
+= Sesión 1: ¡Arrancamos! Introducción a LPS y Swift
+
+== Objetivos de Aprendizaje
+
+- Comprender el "problema" que resuelven las Líneas de Productos Software (LPS).
+- Conocer la terminología básica: LPS, variabilidad, producto.
+- Configurar el entorno de desarrollo (Xcode) y comprobar su funcionamiento.
+- Escribir y ejecutar código básico en Swift: variables, tipos y operadores.
+- Formar grupos de trabajo y comprender la dinámica y entregables del proyecto.
+
+== Contenido Teórico (Cap. 1)
+
+=== Problemática
+- ¿Por qué es ineficiente clonar y modificar proyectos?
+- Costes de mantenimiento y la divergencia de código cuando no existe gestión de variabilidad.
+- Ejemplos breves de problemas reales: bugs replicados, parches divergentes, coste de evolución.
+
+=== Definiciones clave
+- Línea de Productos Software (LPS): conjunto de sistemas que comparten artefactos y se derivan a partir de una plataforma común.
+- Ingeniería de Dominio vs Ingeniería de Aplicación.
+- Variabilidad: puntos donde los productos pueden diferir (features, configuraciones).
+
+=== Beneficios de adoptar LPS
+- Reutilización a gran escala.
+- Reducción del time-to-market.
+- Mejora de calidad por centralizar correcciones y evoluciones.
+
+== Demostración práctica del profesor (TaskApp 👨‍🏫)
+
+* Presentación del proyecto ejemplo "TaskApp Pro": objetivos, alcance y variantes previstas.
+* Live coding en un Playground de Xcode:
+** Declarar variables y constantes (var / let).
+** Tipos básicos: String, Int, Bool, Date.
+** Operadores aritméticos y lógicos.
+** Uso de print() para depurar y comprobar valores. 
+* Crear un nuevo proyecto en Xcode: explicar la plantilla elegida, la estructura de carpetas y archivos (App, Scenes, Assets, Info.plist).
+
+[source,swift]
+----
+// Fragmentos cortos demostrativos (se ejecutarán en Playground)
+let saludo: String = "¡Hola, LPS!"
+var contador: Int = 0
+contador += 1
+print(saludo, contador)
+----
+
+== Práctica guiada del alumno (HabitApp 👩‍💻👨‍💻)
+
+=== Organización de equipos
+- Formad grupos de 5 personas. Asignad rol inicial: coordinador, responsable técnico, documentación, testing, presentación.
+
+=== Setup
+- Todos instalan Xcode (versión mínima indicada por el profesor).
+- Cada miembro crea un proyecto "Hola Mundo" y confirma que puede ejecutar en simulador o dispositivo.
+
+=== Brainstorming y visión inicial
+- Definir conceptualmente la "HabitApp":
+    - ¿Cuál es el mínimo viable (MVP)?
+    - ¿Qué funcionalidades extra podrían añadirse?
+    - Identificar posibles puntos de variabilidad entre miembros: temas, sincronización en la nube, tipos de hábitos, notificaciones.
+- Documentad 2–3 ideas principales y tomad decisiones sobre la variabilidad inicial.
+
+== Entregable (al final de la sesión)
+
+- Un documento (PDF o Markdown) con:
+    - Nombres del grupo y roles.
+    - Breve descripción (2–3 párrafos) de la visión de la "HabitApp".
+    - Lista de puntos de variabilidad identificados.
+- Fecha de entrega y formato acordado en clase.
+
+== Notas prácticas
+- Tiempo estimado de la sesión: 90–120 minutos.
+- Recursos: enlaces a la documentación de Swift, tutoriales de Xcode y el repositorio base del profesor (TaskApp).

@@ -1,3 +1,36 @@
-= Welcome!
+= Líneas de Producto Software (LPS)
 
-You are home.
+Bienvenido al asignatura de Líneas de Producto Software (LPS). Aquí encontrarás toda la información y los reasignaturas necesarios para seguir la asignatura de manera efectiva.
+
+== Introducción
+
+Una Línea de Productos Software (LPS) agrupa sistemas intensivos en software que comparten una serie de características comunes y que satisfacen las necesidades de un segmento de mercado concreto. Estos sistemas se desarrollan a partir de un conjunto común de activos software (core assets) que facilitan la reutilización y aceleran la creación de variantes del producto.
+
+=== Activos software (core assets)
+Por activo software se entiende cualquier artefacto generado durante la Ingeniería del Software que sea reutilizable. Ejemplos típicos:
+
+- Requisitos y especificaciones reutilizables
+- Patrones y decisiones arquitectónicas
+- Componentes y librerías
+- Casos y datos de prueba
+- Documentación y guías de uso
+- Scripts de construcción y configuración
+
+== Objetivos de la asignatura
+- *Identificar* los problemas de escalabilidad y mantenimiento derivados de la reutilización de software ad-hoc (*clonar y modificar*).
+- *Comprender* los conceptos fundamentales de una *Línea de Productos Software*, diferenciando entre *Ingeniería de Dominio* e *Ingeniería de Aplicación*.
+- *Analizar* y modelar la *variabilidad* de una familia de productos software mediante la creación de *Diagramas de Características* formales.
+- *Evaluar* y comparar distintas técnicas para la implementación de la variabilidad en el código fuente y la arquitectura de un sistema.
+- *Desarrollar* aplicaciones funcionales para *iOS* utilizando el lenguaje de programación *Swift* y el framework declarativo *SwiftUI*.
+- *Implementar* la variabilidad de un producto utilizando técnicas como *Feature Flags* para configurar dinámicamente la funcionalidad de la aplicación.
+- *Diseñar* arquitecturas de software flexibles y extensibles mediante el uso de *protocolos* y patrones de diseño como el de *Plugins*.
+- *Utilizar* el sistema de control de versiones *Git* y la plataforma *GitHub* para el trabajo colaborativo, incluyendo el flujo de trabajo con ramas y *Pull Requests*.
+- *Configurar* un pipeline de *Integración Continua (CI)* con *GitHub Actions* para automatizar la compilación y verificación del proyecto.
+
+
+== Contenido de la asignatura
+- *Fundamentos y beneficios* de las Líneas de Productos Software.
+- *Modelado de la variabilidad* de productos con *Diagramas de Características*.
+- *Implementación de la variabilidad* mediante *Feature Flags* y arquitecturas de *Plugins*.
+- *Desarrollo práctico* de una LPS móvil con *Swift*, *SwiftUI* y *Core Data*.
+- *Automatización* y trabajo colaborativo con *Git*, *GitHub Actions* (*CI/CD*).

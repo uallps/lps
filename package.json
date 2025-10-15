@@ -1,5 +1,17 @@
 {
-  "devDependencies": {
-    "antora": "3.1.12"
-  }
+    "devDependencies": {
+        "antora": "3.1.12",
+        "browser-sync": "^3.0.4",
+        "concurrently": "^9.2.1",
+        "nodemon": "^3.1.10"
+    },
+    "scripts": {
+        "build": "npx antora antora-playbook.yml",
+        "watch": "nodemon --watch modules --watch antora-playbook.yml --ext adoc,yml --exec 'npm run build'",
+        "serve": "browser-sync start --server build/site --files 'build/site/**/*' --no-open",
+        "dev": "npm run build && concurrently 'npm run watch' 'npm run serve'"
+    },
+    "dependencies": {
+        "asciidoctor-kroki": "^0.18.1"
+    }
 }

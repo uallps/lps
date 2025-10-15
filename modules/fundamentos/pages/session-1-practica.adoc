@@ -1,0 +1,509 @@
+= Introducción a Swift y primeros pasos
+
+Esta sesión tiene como objetivo familiarizar a los estudiantes con el lenguaje de programación Swift y el entorno de desarrollo Xcode, sentando las bases para el desarrollo de aplicaciones iOS en las siguientes sesiones.
+
+Además, se formarán los equipos de trabajo que colaborarán a lo largo del proyecto HabitApp, definiendo funcionalidades iniciales y estableciendo una visión compartida del producto a desarrollar.
+
+====
+.Objetivos de la práctica
+- Configurar el entorno de desarrollo (Xcode) y comprobar su funcionamiento.
+- Escribir y ejecutar código básico en Swift: variables, tipos y operadores.
+- Formar grupos de trabajo y comprender la dinámica y entregables del proyecto.
+====
+
+== Introducción a Swift
+Swift es un lenguaje de programación potente y fácil de aprender desarrollado por Apple. Es el lenguaje principal para desarrollar aplicaciones iOS, macOS, watchOS y tvOS. Swift combina la eficiencia y el rendimiento de lenguajes como C++ con la simplicidad y seguridad de lenguajes modernos como Python. Se trata de un lenguaje de propósito general, orientado a objetos y funcional, con una sintaxis clara y concisa.
+
+Cabe destacar que Swift es un lenguaje de código abierto, lo que significa que la comunidad puede contribuir a su desarrollo y evolución. Esto ha llevado a una rápida adopción y a una gran cantidad de recursos y bibliotecas disponibles para los desarrolladores. De hecho, Swift esta disponible para el desarrollo en otras plataformas como Linux y Windows, aunque su uso principal sigue siendo en el ecosistema Apple.
+
+=== Playgrounds
+Una de las características más destacadas de Swift es la existencia de los Playgrounds, que son entornos interactivos donde los desarrolladores pueden escribir y ejecutar código Swift de manera inmediata. Los Playgrounds son ideales para aprender Swift, experimentar con nuevas ideas y probar fragmentos de código sin necesidad de crear un proyecto completo.
+
+Para crear un Playground en Xcode, sigue estos pasos:
+
+1. Abre Xcode.
+2. Selecciona "File" > "New" > "Playground...".
+3. Elige un sistema operativo (iOS, macOS, etc.) y una plantilla (por ejemplo, "Blank").
+4. Asigna un nombre al Playground y selecciona una ubicación para guardarlo.
+5. Haz clic en "Create".
+
+Se abrirá una nueva ventana con un archivo de Playground donde podrás escribir y ejecutar código Swift de manera interactiva. Para ejecutar el código, simplemente presiona el botón de reproducción (▶️) en la esquina inferior izquierda del editor o usa el atajo de teclado `Shift + Enter` (hasta la línea actual) o `Shift + Cmd + Enter` (todo el código).
+
+=== Variables y constantes
+
+Vamos a probar el siguiente código en un Playground para familiarizarnos con Swift:
+[source,swift]
+----
+// Declarar una variable mutable
+var contador: Int = 0 <1> 
+contador += 1   // Incrementar el contador
+print("Contador:", contador)  // Imprimir el valor del contador
+// Declarar una constante inmutable
+let saludo: String = "¡Hola, Swift!" <2>
+print(saludo)  // Imprimir el saludo
+----
+<1> En Swift, las variables se declaran con la palabra clave `var`, lo que indica que su valor puede cambiar a lo largo del tiempo. En este caso, `contador` es una variable de tipo `Int` (entero) que inicialmente se establece en 0. Luego, se incrementa en 1 y se imprime su valor.
+<2> En Swift, las constantes se declaran con la palabra clave `let`, lo que indica que su valor no puede cambiar una vez establecido. En este caso, `saludo` es una constante de tipo `String` (cadena de texto) que se inicializa con el valor "¡Hola, Swift!". Luego, se imprime su valor.
+
+=== Cadenas de texto
+
+Las cadenas de texto en Swift se representan con el tipo `String`. Puedes crear cadenas utilizando comillas dobles (`"`). Swift ofrece varias funcionalidades para trabajar con cadenas, como la concatenación, interpolación y métodos para manipular texto. Aquí tienes algunos ejemplos básicos:
+[source,swift]
+----
+let nombre: String = "Mundo"
+let saludoCompleto: String = "¡Hola, \(nombre)!" // Interpolación de cadenas <1> 
+print(saludoCompleto)  // Imprime: ¡Hola, Mundo!
+let mensaje: String = "Swift es genial. "
+let mensajeRepetido: String = mensaje + mensaje  // Concatenación de cadenas <2>
+print(mensajeRepetido)  // Imprime: Swift es genial. Swift es genial.
+----
+<1> La interpolación de cadenas en Swift permite insertar el valor de una variable o expresión dentro de una cadena utilizando la sintaxis `\(variable)`. En este caso, `nombre` se inserta en la cadena para formar el saludo completo.
+<2> La concatenación de cadenas en Swift se realiza utilizando el operador `+`, que une dos o más cadenas en una sola. En este ejemplo, la cadena `mensaje` se concatena consigo misma para crear `mensajeRepetido`.
+
+Las cadenas en Swift son muy versátiles y cuentan con numerosos métodos para manipular y transformar texto, como `uppercased()`, `lowercased()`, `contains()`, entre otros.
+
+También puedes utilizar comillas triples (`"""`) para crear cadenas multilínea, lo que facilita la inclusión de saltos de línea y texto formateado sin necesidad de caracteres de escape.
+[source,swift]
+----
+let textoMultilinea: String = """
+Este es un texto
+multilínea en Swift.
+Puedes escribir en varias líneas
+sin problemas.
+"""
+print(textoMultilinea)
+----
+Esto imprimirá el texto exactamente como se ha escrito, respetando los saltos de línea.
+
+Otro uso de `String` para convertir otros tipos de datos a cadenas. Por ejemplo, puedes convertir un número entero a una cadena utilizando la inicialización de `String`:
+[source,swift]
+----
+let numero: Int = 42
+let textoNumero: String = String(numero)
+print(textoNumero)  // Imprime: 42
+let numeroDecimal: Double = 3.14159
+let textoDecimal: String = String(format: "%.2f", numeroDecimal) // Formateo a 2 decimales <1>
+print(textoDecimal)  // Imprime: 3.14
+----
+<1> En este ejemplo, se utiliza `String(format:)` para convertir un número decimal (`Double`) a una cadena con un formato específico. El formato `"%.2f"` indica que se desea representar el número con dos decimales.
+
+IMPORTANT: En Swift, los parámetros de funciones hay que llamarlos utilizando su nombre, a menos que solo sean un único argumento. Por ejemplo, en `String(format:)`, `format` es el nombre del parámetro que se está pasando. En `String(numero)`, no es necesario especificar el nombre del parámetro porque es el único y Swift lo infiere automáticamente.
+
+=== Condicionales, bucles y funciones
+
+Swift ofrece estructuras de control de flujo como condicionales (`if`, `else`, `switch`), bucles (`for`, `while`, `repeat-while`) y la capacidad de definir funciones para organizar y reutilizar código. Aquí tienes algunos ejemplos básicos:
+[source,swift]
+----
+for i in 0...3 {  // Bucle for <1>
+    if i % 2 == 0 {  // Condicional if <2>
+        print("\(i) es par")
+    } else {
+        print("\(i) es impar")
+    }
+}
+----
+<1> El bucle `for` en Swift se utiliza para iterar sobre un rango de valores. En este caso, `0...3` crea un rango que incluye los números del 0 al 3, y el bucle ejecuta su cuerpo para cada valor de `i` en ese rango.
+<2> La estructura condicional `if` en Swift permite ejecutar diferentes bloques de código según una condición. Aquí, se verifica si `i` es par o impar utilizando el operador módulo (`%`), y se imprime el resultado correspondiente.
+
+[source,swift]
+----
+for i in -5...<10 {  // Bucle for con rango negativo a positivo
+    if i < 0 {
+        print("\(i) es negativo")
+    } else if i == 0 {
+        print("\(i) es cero")
+    } else {
+        print("\(i) es positivo")
+    }
+}
+----
+
+[source,swift]
+----
+for i in 0...3 where i % 2 == 0 {  // Bucle for con condición (solo pares) <1>
+    print("\(i) es par")
+}
+----
+<1> En este ejemplo, el bucle `for` incluye una cláusula `where` que filtra los valores de `i` para que solo se ejecuten las iteraciones donde `i` es par (es decir, cuando `i % 2 == 0`). Esto permite simplificar el código al evitar la necesidad de un condicional dentro del bucle.
+
+Como cualquier lenguaje moderno, Swift tiene algunos tipos básicos para el manejo de colecciones como son los arrays. A continuación, vamos a ver varios ejemplos con un array de cadenas:
+[source,swift]
+----
+var frutas: [String] = ["Manzana", "Banana", "Cereza"]  // Declarar un array de cadenas <1>
+print("Frutas disponibles:")
+for fruta in frutas {  // Iterar sobre el array
+    print("- \(fruta)")
+}
+print("Total de frutas: \(frutas.count)")  // Obtener el número de elementos en el array
+
+for (i, fruta) in frutas.enumerated() {  // Iterar con índice y valor <2>
+    frutas[i] = fruta.uppercased()  // Convertir a mayúsculas
+}
+print("Frutas en mayúsculas:", frutas)
+----
+<1> En Swift, los arrays se declaran utilizando corchetes (`[]`) y pueden contener elementos de un tipo específico. En este caso, `frutas` es un array de cadenas (`[String]`) que contiene tres elementos iniciales.
+<2> El método `enumerated()` en Swift permite iterar sobre un array obteniendo tanto el índice como el valor de cada elemento. En este ejemplo, se utiliza para convertir cada fruta a mayúsculas, accediendo a cada elemento mediante su índice. `(i, fruta)` es una *tupla* que contiene el índice y el valor del elemento actual en la iteración.
+
+IMPORTANT: Si declaramos el array con `let` en lugar de `var`, el array sería inmutable y no podríamos modificar su contenido.
+
+[source,swift]
+----
+for(i, _) in frutas.enumerated() {  // Iterar con índice y valor, ignorando el valor <1>
+    frutas[i] = frutas[i].lowercased()  // Convertir a minúsculas
+}
+print("Frutas en minúsculas:", frutas)
+
+
+array.removeAll()  // Vaciar el array
+
+print("Frutas después de vaciar:", frutas)
+
+for i in stride(from: 0, to: 5, by: 2) {  // Bucle for con stride <2>
+    frutas.append("Pera \(i)")  // Añadir un elemento al array
+}
+print("Frutas después del for con stride:", frutas)
+
+array.removeAll()  // Vaciar el array
+
+for i in stride(from: 0, through: 10, by: 2) {  // Bucle for con stride incluyendo el límite superior <3>
+    frutas.append("Kiwi \(i)")  // Añadir un elemento al array
+}
+print("Frutas después del for con stride through:", frutas)
+----
+<1> En este ejemplo, se utiliza un guion bajo (`_`) para ignorar el valor del elemento durante la iteración con `enumerated()`. Esto es útil cuando solo se necesita el índice y no el valor del elemento.
+<2> El método `stride(from:to:by:)` en Swift permite crear una secuencia de números con un paso específico. En este caso, el bucle itera desde 0 hasta (pero sin incluir) 5, incrementando de 2 en 2. Esto resulta en los valores 0, 2 y 4.
+<3> El método `stride(from:through:by:)` es similar a `stride(from:to:by:)`, pero incluye el valor final en la secuencia. En este caso, el bucle itera desde 0 hasta 10, incluyendo el 10, incrementando de 2 en 2. Esto resulta en los valores 0, 2, 4, 6, 8 y 10.
+
+[source,swift]
+----
+let elementosABorrar = ["Pera 0", "Pera 2"]
+for elemento in elementosABorrar {
+    if let index = frutas.firstIndex(of: elemento) {  // Buscar el índice del elemento <1>
+        frutas.remove(at: index)  // Eliminar el elemento si se encuentra
+    }
+}
+print("Frutas después de eliminar algunas:", frutas)
+----
+<1> El método `firstIndex(of:)` en Swift busca el índice de la primera aparición de un elemento en un array. Si el elemento se encuentra, devuelve su índice; de lo contrario, devuelve `nil`. En este ejemplo, se utiliza para encontrar y eliminar elementos específicos del array `frutas`.
+
+[source,swift]
+----
+for i in 0...3 {
+    if i == 1 {
+        continue  // Saltar a la siguiente iteración si i es 2 <1>
+    } else if i == 3 {
+        break  // Salir del bucle si i es 3 <2>
+    }
+    print("i:", i)
+}   
+----
+<1> La instrucción `continue` en Swift se utiliza para saltar a la siguiente iteración del bucle, omitiendo el resto del código en el cuerpo del bucle para la iteración actual. En este ejemplo, cuando `i` es igual a 1, se ejecuta `continue`, lo que hace que el bucle pase directamente a la siguiente iteración sin imprimir nada.
+<2> La instrucción `break` en Swift se utiliza para salir completamente del bucle, terminando su ejecución. En este ejemplo, cuando `i` es igual a 3, se ejecuta `break`, lo que hace que el bucle termine y no se impriman más valores.
+
+[source,swift]
+----
+var i = 0
+while frutas.count < 5 {  // Bucle while <1>
+    frutas.append("Naranja \(i)")  // Añadir un elemento al array
+    i += 1
+}
+print("Frutas después del while:", frutas)
+----
+<1> El bucle `while` en Swift ejecuta su cuerpo mientras la condición especificada sea verdadera. En este caso, el bucle continúa añadiendo nuevas frutas al array `frutas` hasta que su tamaño alcance 5 elementos.
+
+[source,swift]
+----
+var frutasIterator = frutas.makeIterator()  // Crear un iterador del array <1>
+while let fruta = frutasIterator.next() {  // Bucle while con iterador <2>
+    print("Iterador fruta:", fruta)
+}
+----
+<1> El método `makeIterator()` en Swift crea un iterador para el array, que permite recorrer sus elementos de manera secuencial. Hay que definirlo como `var` porque el iterador mantiene un estado interno que cambia a medida que se avanza.
+<2> El método `next()` del iterador devuelve el siguiente elemento en la secuencia, o `nil` si se han recorrido todos los elementos. En este ejemplo, se utiliza en un bucle `while` para imprimir cada fruta hasta que no queden más elementos.
+
+[source,swift]
+----
+var i = 0
+repeat {
+    print("Fruta \(i)")
+    i += 1
+} while i < 5
+
+print("Fin del repeat-while")
+
+----
+IMPORTANT: El bucle `repeat-while` en Swift es similar al bucle `while`, pero garantiza que el cuerpo del bucle se ejecute al menos una vez antes de evaluar la condición. En este ejemplo, el bucle imprime "Fruta" seguido del valor de `i`, incrementando `i` en cada iteración, hasta que `i` sea menor que 5.
+
+=== Diccionarios y Funciones
+
+Los diccionarios en Swift son colecciones que almacenan pares clave-valor, donde cada valor se asocia a una clave única. Los diccionarios son útiles para almacenar datos que se pueden buscar rápidamente mediante una clave. Aquí tienes un ejemplo básico de cómo usar diccionarios en Swift:
+[source,swift]
+----
+var edades: [String: Int] = ["Alice": 30, "Bob": 25]  // Declarar un diccionario <1>
+print("Edad de Alice:", edades["Alice"] ?? "Desconocida")  // Acceder a un valor por su clave
+edades["Charlie"] = 28  // Añadir un nuevo par clave-valor
+print("Edades actualizadas:", edades)
+edades["Bob"] = 26  // Actualizar el valor asociado a una clave
+print("Edades después de la actualización:", edades)
+edades.removeValue(forKey: "Alice")  // Eliminar un par clave-valor
+print("Edades después de eliminar a Alice:", edades)
+----
+<1> En Swift, los diccionarios se declaran utilizando llaves (`{}`) y se especifica el tipo de las claves y los valores entre corchetes (`[KeyType: ValueType]`). En este caso, `edades` es un diccionario donde las claves son de tipo `String` (nombres) y los valores son de tipo `Int` (edades).
+
+Un diccionario puede tener más de un valor asociado a una misma clave si se utiliza un array como valor. Por ejemplo, un diccionario que asocia nombres de alumnos a sus calificaciones:
+[source,swift]
+----
+var calificaciones: [String: [Double]] = ["Alice": [9.0, 8.5], "Bob": [7.8, 8.2]]  // Diccionario con arrays como valores <1>
+calificaciones["Alice"]?.append(9.5)  // Añadir una calificación
+print("Calificaciones de Alice:", calificaciones["Alice"] ?? "Desconocidas")
+calificaciones["Bob"] = [8.0, 8.5, 9.0]  // Actualizar las calificaciones de Bob
+print("Calificaciones de Bob:", calificaciones["Bob"] ?? "Desconocidas")
+----
+<1> En este ejemplo, `calificaciones` es un diccionario donde las claves son nombres de alumnos (`String`) y los valores son arrays de calificaciones (`[Double]`). Se utiliza el operador de encadenamiento opcional (`?`) para añadir una nueva calificación a Alice, asegurando que la clave exista antes de intentar modificar el array.
+
+IMPORTANT: Los valores en un diccionario son opcionales, ya que una clave puede no existir. Por eso, al acceder a un valor mediante su clave, se utiliza el operador de coalescencia nula (`??`) para proporcionar un valor predeterminado en caso de que la clave no esté presente.
+
+Los diccionarios son colecciones no ordenadas, lo que significa que el orden de los elementos no está garantizado.
+[source,swift]
+----
+print(calificaciones)  // Imprime el diccionario completo
+
+print(calificaciones.sorted { $0.key < $1.key })  // Imprime el diccionario ordenado por claves <1>
+
+for par in calificaciones.sorted(by: { $0.key < $1.key }) {  // Iterar sobre el diccionario <2>
+    let nombre = par.key
+    let notas = par.value
+    print("\(nombre): \(notas)")
+}
+
+for (nombre, notas) in calificaciones.sorted(by: { $0.key < $1.key }) {  // Iterar con desestructuración <3>
+    print("\(nombre): \(notas)")
+}
+----
+<1> El método `sorted(by:)` en Swift permite ordenar los elementos de un diccionario según una clave o valor específico. En este caso, se está ordenando por las claves (nombres de alumnos) en orden ascendente.
+<2> Al iterar sobre un diccionario, cada elemento es un par clave-valor representado como una tupla. En este ejemplo, se desestructura la tupla en `nombre` y `notas` para imprimir cada alumno junto con sus calificaciones.
+<3> La desestructuración de tuplas en el bucle `for` permite asignar directamente las claves y valores a variables separadas, haciendo el código más limpio y legible.
+
+Las funciones en Swift se definen utilizando la palabra clave `func`, seguida del nombre de la función, los parámetros entre paréntesis y el tipo de retorno (si lo hay). Aquí tienes un ejemplo básico de cómo definir y llamar a una función en Swift:
+[source,swift]
+----
+func notaMedia(calificaciones: [Double]) -> Double {  // Definir una función <1>
+    let suma = calificaciones.reduce(0, +)  // Sumar todas las calificaciones <2>
+    return calificaciones.isEmpty ? 0 : suma / Double(calificaciones.count)  // Calcular la media
+}
+
+for (nombre, notas) in calificaciones {
+    let media = notaMedia(calificaciones: notas)  // Llamar a la función
+    print("Nota media de \(nombre): \(media)")
+}
+----
+<1> En este ejemplo, se define una función llamada `notaMedia` que toma un array de calificaciones (`[Double]`) como parámetro y devuelve la nota media como un `Double`.
+<2> El método `reduce(0, +)` en Swift se utiliza para sumar todos los elementos de un array. En este caso, se suma todas las calificaciones para calcular la nota media. `0` es el valor inicial de la suma, y `+` es la operación que se aplica para combinar los elementos del array. Si el array está vacío, la función devuelve 0 para evitar una división por cero.
+
+=== Clausulas y cierres (Closures)
+Las clausulas (closures) en Swift son bloques de código que pueden ser pasados y utilizados en tu código. Son similares a las funciones, pero pueden capturar y almacenar referencias a variables y constantes del contexto en el que se definen. Aquí tienes un ejemplo básico de cómo usar clausulas en Swift:
+[source,swift]
+----
+let numeros: [Int] = [1, 2, 3, 4, 5]
+let numerosPares = numeros.filter { (numero: Int) -> Bool in  // Definir una clausula <1>
+    return numero % 2 == 0  // Filtrar números pares
+}
+print("Números pares:", numerosPares)
+----
+<1> En este ejemplo, se utiliza el método `filter` del array `numeros` para crear un nuevo array que contiene solo los números pares. La clausura se define entre llaves (`{}`) y toma un parámetro `numero` de tipo `Int`, devolviendo un `Bool` que indica si el número es par.
+
+Swift ofrece una sintaxis más concisa para clausulas, permitiendo omitir tipos y utilizar argumentos implícitos. Aquí tienes el mismo ejemplo utilizando una sintaxis más corta:
+[source,swift]
+----
+let numerosParesConciso = numeros.filter { $0 % 2 == 0 }
+print("Números pares (conciso):", numerosParesConciso)
+----
+En esta versión, `$0` representa el primer (y único) parámetro de la clausula, lo que hace el código más breve y legible.
+
+[source,swift]
+----
+func descendente(_ s1: Int, _s2: Int) -> Bool {  // Función para ordenar en orden descendente <1>
+    return s1 > s2
+}
+let numerosOrdenados = numeros.sorted(by: descendente)  // Usar la función para ordenar
+print("Números ordenados (función):", numerosOrdenados)
+
+let numerosOrdenadosClausula = numeros.sorted { $0 > $1 }  // Usar una clausula para ordenar <2>
+print("Números ordenados (clausula):", numerosOrdenadosClausula
+----
+<1> En este ejemplo, se define una función llamada `descendente` que toma dos enteros como parámetros y devuelve un `Bool` que indica si el primer número es mayor que el segundo. Esta función se utiliza con el método `sorted(by:)` para ordenar el array `numeros` en orden descendente.
+<2> En este segundo ejemplo, se utiliza una clausula directamente en el método `sorted(by:)` para lograr el mismo resultado de ordenar los números en orden descendente. La clausula compara dos elementos utilizando `$0` y `$1`, que representan los dos elementos que se están comparando.
+
+El uso de clausulas es común en Swift, especialmente cuando se trabaja con colecciones y funciones de orden superior como `map`, `filter` y `reduce`.
+
+* La función `map` transforma cada elemento de una colección aplicando una clausura. Ejemplo:
+[source,swift]
+----
+let numerosDoblados = numeros.map { $0 * 2 }  // Doblar cada número <1>
+print("Números doblados:", numerosDoblados)
+----
+<1> En este ejemplo, se utiliza el método `map` para crear un nuevo array `numerosDoblados`, donde cada número del array original `numeros` se multiplica por 2 utilizando una clausula.    
+
+* La función `reduce` combina todos los elementos de una colección en un solo valor aplicando una clausura. Ejemplo:
+[source,swift]
+----
+let sumaTotal = numeros.reduce(0) { $0 + $1 }  // Sumar todos los números <1>
+print("Suma total:", sumaTotal)
+----
+<1> En este ejemplo, se utiliza el método `reduce` para calcular la suma total de todos los números en el array `numeros`. La clausula toma dos parámetros implícitos, `$0` (el acumulador) y `$1` (el elemento actual), y los suma. El valor inicial del acumulador es 0.  
+
+* La funcion `filter` crea un nuevo array con los elementos que cumplen una condición especificada en una clausula. Ejemplo:
+[source,swift]
+----
+let numerosMayoresQueDos = numeros.filter { $0 > 2 }  // Filtrar números mayores que 2 <1>
+print("Números mayores que 2:", numerosMayoresQueDos)
+----
+<1> En este ejemplo, se utiliza el método `filter` para crear un nuevo array `numerosMayoresQueDos`, que contiene solo los números del array original `numeros` que son mayores que 2, utilizando una clausula para definir la condición de filtrado.       
+
+=== Actividad práctica 1.
+
+Vamos a crear un playground en Xcode para practicar los conceptos aprendidos. En este caso vamos a simular una lista de tareas sencilla, donde cada tarea tiene un título, una fecha de creación, una fecha de finalización y un campo de completada (booleano). Debes implementar las siguientes funcionalidades:
+- Definir un diccionario para almacenar las tareas, donde la clave es un identificador único (String) y el valor es otro diccionario con los detalles de la tarea (título, fechas, completada).
+
+- Añadir una nueva tarea al diccionario.
+- Marcar una tarea como completada.
+- Eliminar una tarea del diccionario.
+- Listar todas las tareas, mostrando sus detalles.
+- Devolver las tareas que más se han tardado en completar (diferencia entre fecha de creación y fecha de finalización).
+- Calcular el porcentaje de tareas completadas.
+
+Puedes utilizar las funciones, bucles y clausulas que hemos visto para implementar estas funcionalidades. Asegúrate de probar cada función y mostrar los resultados en la consola utilizando `print()`.
+
+Para aquellos tipos de datos que no hemos visto (como fechas), podéis consultar la documentación oficial de Swift o buscar ejemplos en línea. ¡Diviértete programando!
+
+Debereis entregar el código del playground junto con la salida de la consola que muestre que todas las funcionalidades están funcionando correctamente.
+
+== Introducción a SwiftUI
+SwiftUI es un moderno framework de Apple para construir interfaces de usuario en todas las plataformas de Apple. A diferencia de UIKit, que es un framework imperativo, SwiftUI es declarativo. Esto significa que describes cómo quieres que se vea tu interfaz de usuario en diferentes estados, y el sistema se encarga de actualizar la interfaz cuando el estado cambia.
+
+Vamos a crear nuestra primera aplicación con SwiftUI, un "Hola Mundo" interactivo.
+
+=== Creando el proyecto en Xcode
+
+1. Abre Xcode y selecciona "File" > "New" > "Project...".
+2. En la pestaña de `Multiplatform`, selecciona "App" y haz clic en "Next".
+3. Dale un nombre a tu producto, por ejemplo, `HolaSwiftUI`.
+4. Asegúrate de que la "Interface" esté configurada como "SwiftUI" y el "Language" como "Swift".
+5. Haz clic en "Next" y elige una ubicación para guardar tu proyecto.
+
+=== Añadiendo la imagen del logo
+
+Para nuestra aplicación, usaremos el logo de la UAL.
+
+1. Descarga la siguiente imagen y guárdala en tu ordenador como `ual.png`:
++
+image::ual.png[Logo de la UAL, 200, 200]
+2. En Xcode, abre el catálogo de assets (`Assets`).
+3. Pulsa con el botón derecho en el panel izquierdo y selecciona "Import...".
+4. Selecciona la imagen que descargaste y haz clic en "Import".
+5. Nombra la imagen como `LogoUAL`.
+
+=== Construyendo la interfaz
+
+Ahora, vamos a modificar el archivo `ContentView.swift` para crear nuestra interfaz. Reemplaza el contenido del archivo con el siguiente código:
+
+[source,swift]
+----
+import SwiftUI
+
+struct ContentView: View {
+    @State private var nombre: String = "" <1>
+
+    var body: some View {
+        VStack(spacing: 20) { <2>
+            Image("LogoUAL") <3>
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 150)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.gray, lineWidth: 4))
+                .shadow(radius: 10)
+
+            Text(nombre.isEmpty ? "Hola, ¿Qué tal?" : "Hola, \(nombre)") <4>
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            TextField("Introduce tu nombre", text: $nombre) <5>
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+
+            Button(action: { <6>
+                nombre = ""
+            }) {
+                Text("Reset")
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+        }
+        .padding()
+    }
+}
+
+struct ContentView_Previews: PreviewProvider { <7>
+    static var previews: some View {
+        ContentView()
+    }
+}
+----
+<1> `@State` es un property wrapper que permite a la vista "observar" cambios en una variable. Cuando `nombre` cambia, la vista se actualiza automáticamente.
+<2> `VStack` es un contenedor que apila las vistas hijas verticalmente. El `spacing` añade espacio entre cada elemento.
+<3> `Image` muestra la imagen que añadimos a los assets. Le aplicamos varios modificadores para ajustar su tamaño, hacerla circular y añadirle un borde y sombra.
+<4> `Text` muestra un saludo. Usamos un operador ternario para mostrar un mensaje diferente si la variable `nombre` está vacía o no.
+<5> `TextField` es un campo de texto para que el usuario introduzca su nombre. El `$` antes de `nombre` crea un "binding" (enlace bidireccional), de modo que el `TextField` actualiza la variable `nombre` mientras el usuario escribe.
+<6> `Button` crea un botón. La `action` es una clausura que se ejecuta al pulsarlo. En este caso, resetea la variable `nombre` a una cadena vacía, lo que actualiza el `Text` y el `TextField`.
+<7> Esta estructura permite previsualizar la vista en el canvas de Xcode. 
+
+Si no ves nada en el canvas, selecciona el archivo `ContentView.swift`, luego ve al menú superior y selecciona `Editor` > `Canvas` para abrir el canvas si no está ya abierto. Asegúrate de que la vista previa esté activa haciendo clic en el botón de "play" (▶️) en la esquina superior derecha del canvas. Si la imagen aún no aparece, intenta limpiar el proyecto (`Product` > `Clean Build Folder`) y luego vuelve a compilar.
+
+Tienes que ver algo como esto:
+
+image::canvas.png[Pantalla de vista previa en Xcode]
+
+Con este código, tendrás una aplicación sencilla que muestra el poder de SwiftUI para crear interfaces dinámicas con muy poco código. ¡Experimenta cambiando los modificadores y añadiendo nuevas vistas!
+
+=== Actividad práctica con SwiftUI: Personaliza tu "Hola Mundo"
+
+Ahora que tienes la app básica funcionando, vamos a jugar un poco modificando el código para personalizarla. Esta actividad es para experimentar sin miedo a romper nada. Abre el archivo `ContentView.swift` en Xcode y realiza los siguientes cambios uno a uno, ejecutando la app en el simulador después de cada modificación para ver los resultados.
+
+1. **Cambia el mensaje de saludo:** En el `Text`, modifica el texto para que diga algo como "¡Bienvenido a SwiftUI!" en lugar de "Hola, ¿Qué tal?". Prueba con diferentes idiomas o emojis.
+
+2. **Modifica el color del botón:** Cambia `.background(Color.red)` por `.background(Color.blue)` o `.background(Color.green)`. ¿Qué pasa si usas `Color.primary`?
+
+3. **Añade un nuevo campo:** Agrega otro `TextField` debajo del existente para "apellido". Necesitarás una nueva variable `@State private var apellido: String = ""` y actualizar el `Text` para mostrar nombre y apellido juntos.
+
+4. **Cambia el estilo de la imagen:** Prueba quitar `.clipShape(Circle())` para ver la imagen cuadrada. O cambia `.frame(height: 150)` a `.frame(width: 100, height: 100)` para hacerla más pequeña.
+
+5. **Añade una mini calculadora:** Crea dos `TextField` para ingresar números, cuatro `Button` para las operaciones (+, -, *, /), y un `Text` para mostrar el resultado. Necesitarás variables `@State` para los números y el resultado, y lógica en cada botón para calcular y actualizar el resultado.
+
+¡Diviértete experimentando! No hay respuestas correctas, solo aprendizaje. Si te atascas, revisa la documentación de SwiftUI o busca ejemplos en línea.
+
+== Primeros pasos con HabitApp
+
+=== Organización de equipos
+- Formad grupos de 5 personas. 
+
+=== Setup
+- Todos comprueban que tienen Xcode y un dispositivo o simulador iOS funcionando.
+- Cada miembro crea un proyecto "Hola Mundo" y confirma que puede ejecutar en simulador o dispositivo.
+
+=== Brainstorming y visión inicial
+* Definir conceptualmente la "HabitApp":
+** Búsqueda del estado actual del mercado de apps de hábitos.
+** ¿Cuál es el producto mínimo viable (MVP)?
+** ¿Qué funcionalidades extra podrían añadirse?
+
+=== Entregable (Para la siguiente sesión)
+
+* Un documento (PDF o Markdown) con:
+** Miembros del equipo.
+** Breve descripción (2–3 párrafos) de la visión de la "HabitApp".
+** Lista de funcionalidades del MVP.
+** Lista de funcionalidades extra.
+

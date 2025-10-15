@@ -1,0 +1,544 @@
+= Sesión 3: Diseño del Modelo y Diagrama de Características
+
+Esta sesión se centra en una de las herramientas clave de la Ingeniería de Dominio: los **Modelos de Características** (Feature Models). Aprenderemos a capturar la variabilidad de nuestra línea de productos de una manera formal y visual.
+
+Utilizaremos este modelo como un plano para guiar el desarrollo, asegurar la coherencia entre los productos y, finalmente, traducirlo a código Swift.
+
+====
+.Objetivos de la sesión
+- **Comprender** qué es una característica y cómo se modela la variabilidad.
+- **Aplicar** la notación estándar de los Diagramas de Características.
+- **Diseñar** el Diagrama de Características formal para el proyecto grupal.
+- **Traducir** el diagrama a un modelo de datos inicial en Swift.
+====
+
+== Teoría: Modelos de Características (Cap. 3 y 4)
+
+Un Modelo de Características es una estructura de árbol que representa todas las características de una Línea de Productos Software (LPS) y las relaciones entre ellas. Es la principal herramienta para definir y gestionar la variabilidad.
+
+=== ¿Qué es una Característica (Feature)?
+
+Una característica es una unidad de funcionalidad visible para el usuario o un stakeholder. Es algo que un producto "hace" o "tiene". Ejemplos: "Guardar en la nube", "Modo oscuro", "Notificaciones push".
+
+=== El Diagrama de Características
+
+Es la representación visual del modelo. Se lee de arriba abajo, descomponiendo características complejas en otras más simples.
+
+.Componentes Principales
+- **Raíz (Root):** El nodo superior, que representa el producto o la LPS en su conjunto.
+- **Características Hijas:** Descomposición de una característica padre.
+- **Relaciones de Variabilidad:** Definen cómo se pueden seleccionar las características hijas.
+
+=== Notación del Diagrama
+
+[cols="1,3"]
+|===
+| Símbolo | Descripción
+
+| *Característica Obligatoria (Mandatory)*
+| Un círculo relleno (`●`). Si se elige el padre, esta característica *debe* ser incluida. Es una relación 1 a 1.
+
+| *Característica Opcional (Optional)*
+| Un círculo vacío (`○`). Si se elige el padre, esta característica *puede o no* ser incluida. Es una relación 0 a 1.
+
+| *Grupo Alternativo (Alternative / XOR)*
+| Un arco que conecta varias características opcionales. Si se elige el padre, *exactamente una* de las características del grupo debe ser seleccionada.
+
+| *Grupo Opcional Múltiple (Or)*
+| Un arco relleno que conecta varias características opcionales. Si se elige el padre, *una o más* de las características del grupo pueden ser seleccionadas.
+|===
+
+.Ejemplo Visual de Notación
+[plantuml]
+----
+@startuml
+title Ejemplo de Notación de Características
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "Coche" as Coche
+
+rectangle "Motor"
+rectangle "Transmisión"
+rectangle "Extras"
+rectangle "Sistema de Audio" as Audio
+rectangle "Llantas"
+
+rectangle "Techo Solar"
+rectangle "Asientos de Cuero"
+
+rectangle "Radio Básica"
+rectangle "Sistema Premium"
+
+rectangle "17 pulgadas"
+rectangle "18 pulgadas"
+rectangle "19 pulgadas"
+
+Coche --@ Motor
+Coche --@ Transmisión
+Coche --0 Extras
+Coche -- Audio
+Coche -- Llantas
+
+interface ExtrasI as " " #black
+Extras -- ExtrasI
+ExtrasI -- "Techo Solar"
+ExtrasI -- "Asientos de Cuero"
+
+interface AudioI as " "
+Audio -- AudioI
+AudioI -- "Radio Básica"
+AudioI -- "Sistema Premium"
+
+interface LlantasI as " "
+Llantas -- LlantasI
+LlantasI -- "17 pulgadas"
+LlantasI -- "18 pulgadas"
+LlantasI -- "19 pulgadas"
+@enduml
+----
+
+=== Restricciones Cruzadas (Cross-Tree Constraints)
+
+A veces, la selección de una característica en una rama del árbol afecta a otra en una rama diferente.
+
+- `requires`: La selección de la característica A implica que la característica B también debe ser seleccionada.
+- `excludes`: La selección de la característica A impide que la característica B sea seleccionada.
+
+.Ejemplo de Restricciones
+[plantuml]
+----
+@startuml
+title Ejemplo de Restricciones Cruzadas
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "PC Personalizado" as PC
+
+rectangle "Sistema Operativo" as OS
+rectangle "Software" as Software
+rectangle "Hardware Extra" as HW
+
+rectangle "Windows"
+rectangle "Linux"
+rectangle "macOS"
+
+rectangle "Suite Ofimática"
+rectangle "Software de Diseño" as Diseno
+rectangle "IDE de Desarrollo"
+
+rectangle "Tarjeta Gráfica Dedicada" as GPU
+rectangle "Refrigeración Líquida" as Liquid
+
+PC --@ OS
+PC --@ Software
+PC --0 HW
+
+' Grupo alternativo para Sistema Operativo (XOR)
+interface OSI as " " #black
+OS -- OSI
+OSI -- "Windows"
+OSI -- "Linux"
+OSI -- "macOS"
+
+Software --@ "Suite Ofimática"
+Software --@ Diseno
+Software --@ "IDE de Desarrollo"
+
+HW --o GPU
+HW --o Liquid
+
+' Restricciones
+Diseno ..> GPU : requires
+note on link: El software de diseño necesita una GPU dedicada
+
+Liquid <..> macOS : excludes
+note on link: La refrigeración líquida no es compatible con la opción macOS
+
+@enduml
+----
+
+== Demostración: Diagrama de "TaskApp Pro" 👨‍🏫
+
+Vamos a aplicar esta teoría a nuestro proyecto de ejemplo, "TaskApp Pro". Basándonos en las características que definimos en la Sesión 1, construiremos su Diagrama de Características.
+
+.Características de TaskApp Pro
+- **Obligatorias:** Título y Estado.
+- **Opcionales:** Fecha de Vencimiento, Prioridad, Recordatorios.
+- **Alternativas:** Persistencia (JSON o Core Data).
+
+Vamos a construir el diagrama paso a paso en el nuevo formato, explicando cada elemento.
+
+=== Paso 1: La Raíz y Características Obligatorias
+Empezamos con la raíz "TaskApp Pro" y añadimos las características obligatorias: "Gestión de Tareas" (que incluye "Título" y "Estado" como obligatorios).
+
+[plantuml]
+----
+@startuml
+title Paso 1: Raíz y Obligatorias
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "TaskApp Pro" as App
+rectangle "Gestión de Tareas" as Gestion
+rectangle "Título" as Titulo
+rectangle "Estado" as Estado
+
+App --@ Gestion
+Gestion --@ Titulo
+Gestion --@ Estado
+@enduml
+----
+
+=== Paso 2: Añadiendo Características Opcionales
+Añadimos "Info Adicional" como opcional, con "Fecha de Vencimiento" y "Prioridad" también opcionales.
+
+[plantuml]
+----
+@startuml
+title Paso 2: Añadiendo Opcionales
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "TaskApp Pro" as App
+rectangle "Gestión de Tareas" as Gestion
+rectangle "Título" as Titulo
+rectangle "Estado" as Estado
+rectangle "Info Adicional" as Info
+rectangle "Fecha de Vencimiento"
+rectangle "Prioridad"
+
+App --@ Gestion
+Gestion --@ Titulo
+Gestion --@ Estado
+App --o Info
+Info --o "Fecha de Vencimiento"
+Info --o "Prioridad"
+@enduml
+----
+
+=== Paso 3: Notificaciones
+Añadimos "Notificaciones" como opcional, con "Recordatorios" también opcional.
+
+[plantuml]
+----
+@startuml
+title Paso 3: Notificaciones
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "TaskApp Pro" as App
+rectangle "Gestión de Tareas" as Gestion
+rectangle "Título" as Titulo
+rectangle "Estado" as Estado
+rectangle "Info Adicional" as Info
+rectangle "Fecha de Vencimiento"
+rectangle "Prioridad"
+rectangle "Notificaciones" as Notif
+rectangle "Recordatorios"
+
+App --@ Gestion
+Gestion --@ Titulo
+Gestion --@ Estado
+App --o Info
+Info --o "Fecha de Vencimiento"
+Info --o "Prioridad"
+App --o Notif
+Notif --o "Recordatorios"
+@enduml
+----
+
+=== Paso 4: Persistencia con Alternativas
+Añadimos "Persistencia" como obligatorio, con alternativas "JSON" o "Core Data" (XOR).
+
+[plantuml]
+----
+@startuml
+title Paso 4: Persistencia con Alternativas
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "TaskApp Pro" as App
+rectangle "Gestión de Tareas" as Gestion
+rectangle "Título" as Titulo
+rectangle "Estado" as Estado
+rectangle "Info Adicional" as Info
+rectangle "Fecha de Vencimiento"
+rectangle "Prioridad"
+rectangle "Notificaciones" as Notif
+rectangle "Recordatorios"
+rectangle "Persistencia" as Pers
+rectangle "JSON"
+rectangle "Core Data"
+
+App --@ Gestion
+Gestion --@ Titulo
+Gestion --@ Estado
+App --o Info
+Info --o "Fecha de Vencimiento"
+Info --o "Prioridad"
+App --o Notif
+Notif --o "Recordatorios"
+App --@ Pers
+
+' Grupo alternativo para Persistencia (XOR)
+interface PersI as " " #black
+Pers -- PersI
+PersI -- "JSON"
+PersI -- "Core Data"
+@enduml
+----
+
+=== Paso 5: Restricción Cruzada
+Finalmente, añadimos la restricción: "Recordatorios" requiere "Fecha de Vencimiento".
+
+[plantuml]
+----
+@startuml
+title Diagrama Completo de Características de TaskApp Pro
+
+skinparam monochrome true
+skinparam ranksep 25
+skinparam rectangle {
+    roundCorner 5
+}
+
+rectangle "TaskApp Pro" as App
+rectangle "Gestión de Tareas" as Gestion
+rectangle "Título" as Titulo
+rectangle "Estado" as Estado
+rectangle "Info Adicional" as Info
+rectangle "Fecha de Vencimiento"
+rectangle "Prioridad"
+rectangle "Notificaciones" as Notif
+rectangle "Recordatorios"
+rectangle "Persistencia" as Pers
+rectangle "JSON"
+rectangle "Core Data"
+
+App --@ Gestion
+Gestion --@ Titulo
+Gestion --@ Estado
+App --o Info
+Info --o "Fecha de Vencimiento"
+Info --o "Prioridad"
+App --o Notif
+Notif --o "Recordatorios"
+App --@ Pers
+
+' Grupo alternativo para Persistencia (XOR)
+interface PersI as " " #black
+Pers -- PersI
+PersI -- "JSON"
+PersI -- "Core Data"
+
+' Restricción cruzada
+"Recordatorios" ..> "Fecha de Vencimiento" : requires
+note on link: Los recordatorios requieren una fecha de vencimiento
+@enduml
+----
+
+.Actividad: Diseño del Diagrama de Características (1h)
+****
+
+- **Revisad** el brainstorming de HabitApp.
+- **Identificad** las características principales de "HabitApp".
+- **Clasificadlas** como obligatorias, opcionales, alternativas o en grupos "or".
+- **Dibujad** el diagrama en papel o usando una herramienta online (como PlantUML).
+- **Añadid** al menos una restricción `requires` o `excludes` si tiene sentido en vuestro dominio.
+
+****
+
+=== Estructura de Directorios MVVM para "TaskApp Pro"
+
+Esta estructura organiza el proyecto siguiendo el patrón MVVM y está diseñada para soportar la arquitectura de Línea de Productos Software, separando el núcleo de la aplicación de las features opcionales (plugins).
+
+----
+TaskApp/
+├── 📁 Application/
+│   ├── 📄 TaskApp.swift               // Punto de entrada de la app (@main)
+│   └── 📄 AppConfig.swift             // GESTOR DE FEATURE FLAGS
+│
+├── 📁 Core/
+│   ├── 📁 Models/
+│   │   ├── 📄 Task.swift              // El modelo de datos principal (M)
+│   │   ├── 📄 Priority.swift         // Enum para la prioridad
+│   │   └── 📄 TaskState.swift         // Enum para el estado
+│   │
+│   ├── 📁 Views/
+│   │   ├── 📄 TaskListView.swift     // La vista principal que muestra la lista (V)
+│   │   └── 📄 TaskRowView.swift       // La vista para una sola fila en la lista (V)
+│   │
+│   └── 📁 ViewModels/
+│       └── 📄 TaskListViewModel.swift // Lógica y estado para TaskListView (VM)
+│
+├── 📁 Features/
+│   ├── 📁 DueDate/
+│   │   ├── 📁 Views/
+│   │   │   └── 📄 DatePickerView.swift
+│   │   └── 📁 .../
+│   │
+│   ├── 📁 Reminders/
+│   │   ├── 📁 Views/
+│   │   │   └── 📄 ReminderSettingsView.swift
+│   │   └── 📁 .../
+│   │
+│   └── 📁 .../ (Otras carpetas para cada feature)
+│
+├── 📁 Infrastructure/
+│   ├── 📁 Persistence/
+│   │   ├── 📄 StorageProvider.swift        // El protocolo ("enchufe")
+│   │   ├── 📄 JSONStorageProvider.swift     // Plugin 1
+│   │   └── 📄 SwiftDataStorageProvider.swift // Plugin 2
+│   │
+│   └── 📁 Plugins/
+│       ├── 📄 PluginRegistry.swift         // Registra todos los plugins activos
+│       ├── 📄 RowComponentPlugin.swift     // Protocolo para plugins de UI
+│       └── 📄 TaskDataObservingPlugin.swift // Protocolo para plugins de datos
+│
+└── 📁 Utils/
+    └── 📄 Date+Extensions.swift          // Helpers y extensiones
+----
+
+==== Explicación de las Carpetas
+
+📁 **Application**: Contiene la configuración global de la aplicación. Aquí vive el fichero `@main` que arranca todo y, muy importante, nuestro `AppConfig.swift`, el "cuadro de mandos" de los feature flags.
+
+📁 **Core**: Es el corazón de la aplicación, con la funcionalidad mínima que tendrán todos los productos. Está organizado siguiendo estrictamente MVVM:
+
+- **Models**: Las estructuras de datos principales (`Task`, `Priority`, etc.).
+- **Views**: Las vistas de SwiftUI que siempre estarán presentes (`TaskListView`).
+- **ViewModels**: La lógica que maneja esas vistas (`TaskListViewModel`).
+
+📁 **Features**: ¡Aquí es donde vive la LPS! Cada subcarpeta (`DueDate`, `Reminders`) es un módulo autocontenido que representa una feature opcional. Internamente, cada una puede seguir su propia mini-estructura MVVM.
+
+📁 **Infrastructure**: Es la "fontanería" que permite que todo funcione.
+
+- **Persistence**: Contiene el "contrato" (`StorageProvider`) y las dos implementaciones intercambiables (JSON y SwiftData).
+- **Plugins**: Aquí definimos las "interfaces" de nuestros plugins. El `PluginRegistry` es el cerebro que sabe qué plugins están "enchufados" en cada momento.
+
+📁 **Utils**: Una carpeta de utilidades para código reutilizable que no encaja en ningún otro sitio.
+
+=== Traducción a Modelo de Datos Swift
+
+Este diagrama nos sirve de guía para crear nuestras estructuras en Swift. Las características se convierten en propiedades de nuestros `structs`. Vamos a construir el modelo paso a paso, empezando por lo obligatorio, luego lo opcional, y finalmente la compilación condicional.
+
+==== Paso 1: Modelo Base Obligatorio
+Empezamos con la estructura base que representa las características obligatorias: un ID único, el título de la tarea y su estado de completitud.
+
+[source,swift]
+----
+struct Tarea {
+    let id: UUID = UUID()  <1>
+    var titulo: String
+    var completada: Bool = false  <2>
+}
+----
+<1> **UUID**: Identificador Único Universal. `UUID()` genera un ID único cada vez que se crea una instancia de `Tarea`. Es `let` (inmutable) para asegurar que el ID no cambie nunca.
+<2> **Valor por defecto**: `= false` asigna `false` como valor inicial si no se especifica otro al crear la tarea. Indica que la tarea no está completada por defecto.
+
+Esta estructura define lo mínimo necesario para cualquier tarea en TaskApp Pro. El `id` es único e inmutable, `titulo` es requerido, y `completada` indica si la tarea está terminada.
+
+==== Paso 2: Añadiendo Propiedades Opcionales
+Ahora añadimos las propiedades opcionales basadas en las características opcionales del diagrama. Usamos tipos opcionales (`?`) para representar que estas propiedades pueden no estar presentes.
+
+[source,swift]
+----
+struct Tarea {
+    let id: UUID = UUID()
+    var titulo: String
+    var completada: Bool = false
+    var fechaVencimiento: Date?  <1>
+    var prioridad: Prioridad?  <2>
+}
+
+enum Prioridad {
+    case baja, media, alta  <3>
+}
+----
+<1> **Propiedad opcional**: `Date?` permite que `fechaVencimiento` sea `nil` si no se establece, representando una característica opcional.
+<2> **Propiedad opcional**: `Prioridad?` es opcional y usa el enum definido abajo.
+<3> **Enum**: Define los posibles valores para la prioridad, permitiendo solo `baja`, `media` o `alta`.
+
+Hemos añadido `fechaVencimiento` y `prioridad` como opcionales. El enum `Prioridad` define los posibles valores para la prioridad de una tarea.
+
+==== Paso 3: Compilación Condicional con `#if`
+Para representar cómo las características opcionales pueden activarse o desactivarse en diferentes productos, usamos directivas de compilación condicional. Esto permite incluir o excluir código basado en módulos disponibles.
+
+[source,swift]
+----
+struct Tarea {
+    let id: UUID = UUID()
+    var titulo: String
+    var completada: Bool = false
+    #if canImport(Fechas)  <1>
+    var fechaVencimiento: Date?
+    #endif
+    #if canImport(Prioridades)  <2>
+    var prioridad: Prioridad?
+    #endif
+}
+
+#if canImport(Prioridades)  <3>
+enum Prioridad {
+    case baja, media, alta
+}
+#endif
+----
+<1> **Compilación condicional**: `#if canImport(Fechas)` incluye `fechaVencimiento` solo si el módulo `Fechas` está disponible, permitiendo variabilidad en el producto.
+<2> **Compilación condicional**: Similarmente, incluye `prioridad` solo si `Prioridades` está disponible.
+<3> **Compilación condicional del enum**: El enum `Prioridad` se define solo si el módulo `Prioridades` está disponible, evitando código innecesario.
+
+NOTE: Este uso de `#if canImport(...)` es un ejemplo simplificado para ilustrar la variabilidad en tiempo de compilación. En sesiones posteriores veremos técnicas más avanzadas para gestionar la variabilidad de productos. Aquí se trata de deshabilitar características opcionales en tiempo de compilación, excluyendo el código correspondiente si los módulos no están disponibles.
+
+
+////
+// .Ejemplo de punto de partida para HabitApp
+// - **Raíz:** HabitApp
+// - **Obligatorias:** Nombre del Hábito, Registro de Cumplimiento.
+// - **Opcionales:** Notas, Categorías, Metas (ej. "hacerlo 30 días seguidos").
+// - **Alternativas:** Tipo de Hábito (Contador vs. Sí/No).
+// - **Restricción:** `Metas` requiere `Registro de Cumplimiento`.
+////
+
+.Actividad: Creación del Modelo de Datos en Swift (45 min)
+****
+
+- Cread un nuevo proyecto de Xcode o un Playground.
+- Traducid vuestro diagrama de características a `struct`s y `enums`.
+- Usad propiedades opcionales (`?`) para representar características opcionales.
+- No os preocupéis aún por la compilación condicional (`#if`), solo por definir la estructura de datos completa que necesitaréis.
+- Repartid la implementación de las `features` entre los miembros del equipo para las próximas sesiones.
+
+**Entregable**
+
+- Un documento (PDF o Markdown) que contenga:
+    - Una imagen o código PlantUML de vuestro Diagrama de Características de "HabitApp".
+    - El código Swift con los `struct`s y `enums` que modelan vuestro diagrama.
+- Subid el documento al repositorio Git de vuestro grupo.
+
+****

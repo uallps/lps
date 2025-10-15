@@ -1,0 +1,7 @@
+* xref:index.adoc[Módulo 1: Fundamentos y Diseño]
+** xref:session-1.adoc[Sesión 1: ¡Arrancamos! Introducción a LPS y Swift]
+*** xref:session-1-practica.adoc[Prácticas]
+*** xref:session-1-configuracion.adoc[Configuración del entorno de desarrollo en Linux y Windows]
+*** xref:session-1-taskapp.adoc[Introducción a TaskApp Pro]
+** xref:session-3.adoc[Sesión 3: Diseño del Modelo y Diagrama de Características]
+** xref:session-4.adoc[Sesión 4: Construcción de UI y Primer Punto de Variación]

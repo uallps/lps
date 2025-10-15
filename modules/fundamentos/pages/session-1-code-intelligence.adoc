@@ -1,0 +1,150 @@
+= Configuración de Code Intelligence en Xcode
+
+Esta sesión complementa la introducción a Swift cubriendo la configuración y uso de code intelligence en Xcode. Code intelligence incluye características como autocompletado, sugerencias de código, refactorización y análisis estático, que son nativas en Xcode para mejorar la productividad en el desarrollo de Swift. Xcode proporciona herramientas avanzadas para escribir código más eficiente y detectar errores en tiempo real.
+
+====
+.Objetivos de la práctica
+- Habilitar y configurar code intelligence en Xcode.
+- Utilizar autocompletado y sugerencias en Swift.
+- Realizar refactorización de código.
+- Comprender las herramientas de análisis estático y debugging en Xcode.
+====
+
+== Introducción
+Code intelligence en Xcode se refiere a las capacidades integradas que ayudan a los desarrolladores a escribir código Swift de manera más eficiente. Incluye autocompletado inteligente, detección de errores, refactorización automática y navegación de código. Estas características están disponibles de forma nativa en Xcode y no requieren configuraciones adicionales complejas.
+
+En esta sesión, aprenderemos a aprovechar al máximo las herramientas de code intelligence en Xcode para proyectos Swift.
+
+== Habilitando Code Intelligence en Xcode
+Xcode viene con code intelligence habilitado por defecto, pero puedes verificar y ajustar configuraciones para optimizar su funcionamiento.
+
+=== Verificación de configuraciones
+* Abre Xcode y ve a Preferences (Cmd + ,).
+* Selecciona la pestaña "Text Editing".
+* Asegúrate de que "Code completion" esté habilitado.
+* En "Editing", verifica que "Enable type-over completions" esté activado.
+
+La configuración debería verse similar a la siguiente:
+[source,console]
+----
+Code completion: Enabled
+Enable type-over completions: Enabled
+----
+
+=== Configuración para Swift
+* En Preferences > Text Editing > Editing, selecciona "Swift" en el menú desplegable.
+* Habilita opciones como "Automatically insert closing braces" y "Enable code folding".
+
+== Usando Autocompletado en Swift
+El autocompletado en Xcode sugiere código basado en el contexto.
+
+=== Ejemplo básico
+Abre un archivo Swift (.swift) en tu proyecto.
+
+Escribe:
+[source,swift]
+----
+let mensaje = "Hola"
+print(mensa
+----
+
+Xcode debería sugerir completar "mensaje" automáticamente.
+
+Presiona Tab para aceptar la sugerencia.
+
+=== Sugerencias avanzadas
+Xcode sugiere tipos de datos, métodos y propiedades.
+
+Por ejemplo, al escribir una función:
+[source,swift]
+----
+func calcularArea(ancho: Double, alto: Double) -> Double {
+    return ancho * 
+----
+
+Xcode sugiere completar con "alto" o expresiones relacionadas.
+
+== Refactorización de Código
+Xcode permite refactorizar código para mejorar su estructura.
+
+=== Renombrar símbolos
+* Selecciona una variable o función.
+* Ve a Editor > Refactor > Rename (o Cmd + Ctrl + E).
+* Cambia el nombre y Xcode actualizará todas las referencias.
+
+Ejemplo: Renombra "mensaje" a "saludo".
+
+=== Extraer método
+* Selecciona código y ve a Editor > Refactor > Extract Method.
+* Xcode crea una nueva función con el código seleccionado.
+
+== Análisis Estático y Debugging
+Xcode incluye análisis estático para detectar errores.
+
+=== Usando el analizador estático
+* Ve a Product > Analyze (Shift + Cmd + B).
+* Xcode revisa el código en busca de problemas potenciales.
+
+La salida podría mostrar warnings como:
+[source,console]
+----
+Warning: Variable 'unusedVar' is never used.
+----
+
+=== Debugging con code intelligence
+Durante el debugging, Xcode resalta líneas y sugiere correcciones.
+
+* Coloca un breakpoint (haz clic en el margen izquierdo).
+* Ejecuta el proyecto (Cmd + R).
+* Cuando se detenga, Xcode muestra sugerencias para variables y expresiones.
+
+== Integración con Otras Herramientas
+Aunque Xcode tiene code intelligence nativo, puedes integrar herramientas adicionales.
+
+=== Usando GitHub Copilot (si disponible)
+* Instala la extensión de GitHub Copilot para Xcode (a través de App Store o terceros).
+* Inicia sesión con tu cuenta de GitHub.
+* Copilot proporcionará sugerencias de IA en tiempo real.
+
+Nota: GitHub Copilot no es oficial para Xcode, pero hay versiones de terceros.
+
+=== Añadiendo un Model Provider con API Compatible con OpenAI
+Xcode permite integrar extensiones de Source Editor que pueden conectarse a modelos de IA con API compatible con OpenAI, como GPT-3 o GPT-4.
+
+==== Instalación de una extensión compatible
+* Busca extensiones en el App Store de macOS o en repositorios como GitHub (ej. "Xcode AI Assistant" o "Codeium for Xcode").
+* Instala la extensión y habilítala en Xcode > Preferences > Extensions.
+
+==== Configuración de la API
+* Una vez instalada, configura la clave API.
+* Para usar OpenAI: Añade tu API key de OpenAI (obténla desde https://platform.openai.com/) y selecciona el modelo (ej. GPT-4).
+* Para usar Gemini (compatible con OpenAI API): Crea una API key en Google AI Studio (https://aistudio.google.com/), usa la URL https://generativelanguage.googleapis.com/v1beta/openai/, y configura el header como X-goog-api-key.
+
+La configuración para Gemini podría verse así:
+[source,console]
+----
+API URL: https://generativelanguage.googleapis.com/v1beta/openai/
+API Key: tu_clave_de_google_ai
+Header Name: X-goog-api-key
+----
+
+Se recomienda usar el modelo 
+
+==== Verificación y uso
+* Abre un archivo Swift y comienza a escribir.
+* La extensión debería proporcionar sugerencias basadas en el modelo de OpenAI.
+
+Ejemplo: Escribe un comentario como "// Genera una función para sumar dos números" y la extensión podría sugerir código.
+
+Nota: Asegúrate de que la extensión sea compatible con la API de OpenAI y respete los términos de uso.
+
+=== Limitaciones
+- Code intelligence en Xcode es específico para Swift y Objective-C.
+- Para proyectos grandes, puede ser lento; optimiza configuraciones.
+- No reemplaza pruebas manuales; úsalo como asistencia.
+
+== Consideraciones Finales
+- Code intelligence en Xcode acelera el desarrollo de Swift, pero requiere práctica para usarlo efectivamente.
+- Combina con documentación oficial de Apple.
+- Explora más en https://developer.apple.com/documentation/xcode/ y https://swift.org/.
+- Mantén Xcode actualizado para las últimas mejoras en code intelligence.

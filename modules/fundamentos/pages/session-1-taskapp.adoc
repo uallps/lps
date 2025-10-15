@@ -1,0 +1,145 @@
+= Introducción a TaskApp Pro y primeros pasos con Swift
+
+Esta sesión tiene como objetivo introducir el proyecto TaskApp Pro, familiarizar a los estudiantes con el lenguaje de programación Swift y el entorno de desarrollo Xcode, sentando las bases para el desarrollo de aplicaciones iOS en las siguientes sesiones.
+
+Además, se formarán los equipos de trabajo que colaborarán a lo largo del proyecto TaskApp Pro, definiendo funcionalidades iniciales y estableciendo una visión compartida del producto a desarrollar.
+
+====
+.Objetivos de la práctica
+- **Comprender** el concepto y alcance del proyecto **TaskApp Pro**.
+- **Configurar** el entorno de desarrollo (**Xcode**) y comprobar su funcionamiento.
+- **Escribir** y ejecutar código básico en **Swift**: variables, tipos y operadores.
+- **Formar** grupos de trabajo y comprender la dinámica y entregables del proyecto.
+====
+
+== Introducción a TaskApp Pro
+Construyendo una Línea de Productos Software, paso a paso.
+
+=== ¿Qué es "**TaskApp Pro**"?
+**TaskApp Pro** es el proyecto que desarrollaré en directo durante las clases. No es solo una aplicación, es nuestro laboratorio de aprendizaje.
+
+Su objetivo no es ser la mejor app de tareas del mercado, sino ser el ejemplo más claro y didáctico para entender los conceptos de la **asignatura**. Cada línea de código y cada decisión de diseño tendrá un propósito pedagógico.
+
+=== El Concepto: Simple y Universal
+Empezamos con una base que todos entendemos: una lista de tareas.
+
+**Entidad Principal:** Una Tarea.
+
+**Atributos Mínimos:** Un título (qué hay que hacer) y un estado (completado/pendiente).
+
+Esta simplicidad nos permite centrarnos en lo verdaderamente importante: la **arquitectura**, la **variabilidad** y el proceso de **ingeniería**, sin perdernos en una lógica de negocio compleja.
+
+=== De App a Familia de Apps: La Variabilidad
+Aquí es donde "**TaskApp Pro**" se convierte en una **Línea de Productos Software**. Introduciremos variabilidad en dos ejes principales:
+
+* **Funcionalidad:** Añadiremos características que se podrán "activar" o "desactivar" para crear diferentes versiones de la app.
+* **Arquitectura:** Implementaremos decisiones técnicas alternativas, como la forma en que se guardan los datos.
+
+=== Nuestras Características
+
+[cols="1,1,2", options="header"]
+|===
+| Característica | Tipo | Descripción
+| Título y Estado | Obligatorio | El núcleo de la aplicación.
+| 📅 Fecha de Vencimiento | Opcional | Permite asignar un plazo a las tareas.
+| ❗️ Prioridad | Opcional | Permite organizar tareas por importancia.
+| 🔔 Recordatorios | Opcional | Configura notificaciones para no olvidar nada.
+| 💾 Persistencia | Alternativa | Se debe elegir entre JSON (simple) o Core Data (avanzado).
+|===
+
+Este será nuestro plano. A partir de él, podremos generar múltiples productos:
+
+Producto Básico:: Solo título y estado.
+
+Producto "Pro":: Con fechas, prioridades y recordatorios.
+
+Producto "Offline":: Con persistencia local simple.
+
+Producto "Enterprise":: Con persistencia avanzada y robusta.
+
+
+=== Tecnologías que Usaremos
+* **Lenguaje:** Swift
+* **Interfaz:** SwiftUI
+* **Entorno:** Xcode
+* **Control de Versiones:** Git y GitHub
+* **Automatización:** GitHub Actions (CI/CD)
+
+¡Vamos a construirlo juntos!
+A lo largo de las próximas semanas, veréis cómo este simple concepto evoluciona hasta convertirse en una plataforma flexible y robusta.
+
+**TaskApp Pro** será el hilo conductor que conectará cada concepto teórico con una implementación real y práctica.
+
+== Ingeniería de Requisitos y Diseño
+Antes de escribir código, es fundamental entender qué vamos a construir y cómo lo haremos.
+=== Requisitos Iniciales
+* **Funcionalidades Básicas:** Crear, editar, eliminar y listar tareas.
+* **Funcionalidades Opcionales:** Asignar fechas, prioridades y configurar recordatorios.
+* **Persistencia:** Guardar y cargar tareas desde almacenamiento local (JSON o Core Data).
+* **Interfaz de Usuario:** Una interfaz sencilla y clara usando SwiftUI.
+
+=== Prototipos y Mockups
+Antes de codificar, es útil tener una idea visual de la aplicación. Esto permite comprobar si se están cumpliendo los requisitos y facilita la comunicación dentro del equipo. No es necesario un diseño detallado, pero sí una representación básica de las pantallas principales. Esto nos permite iterar rápidamente y ajustar el diseño según sea necesario.
+
+A continuación, se muestran capturas de pantalla de un prototipo inicial de **TaskApp Pro**, que representa la interfaz de usuario básica para el producto. Este prototipo incluye las funcionalidades mínimas: título y estado de las tareas.
+
+image::welcome.png[Pantalla de bienvenida, width=50%]
+
+*Pantalla de bienvenida:* Esta es la primera pantalla que ve el usuario al abrir la app. Muestra un mensaje de bienvenida y una introducción a **TaskApp Pro**, invitando al usuario a empezar a gestionar sus tareas.
+
+image::screen.png[Pantalla principal con lista de tareas, width=50%]
+
+*Pantalla principal:* Aquí se muestra la lista de tareas pendientes y completadas. Cada tarea tiene un título y un indicador de estado (por ejemplo, un checkbox para marcar como completada). Esta pantalla permite al usuario ver un resumen de sus tareas.
+
+image::add.png[Pantalla para añadir una nueva tarea, width=50%]
+
+*Pantalla para añadir tarea:* Desde esta pantalla, el usuario puede crear una nueva tarea introduciendo el título. Es la funcionalidad básica para agregar tareas a la lista.
+
+image::settings.png[Pantalla de configuración, width=50%]
+
+*Pantalla de configuración:* Esta pantalla permite al usuario ajustar preferencias básicas de la app, como el tema o notificaciones simples. En versiones futuras, aquí se activarían las características opcionales como prioridades o persistencia.
+
+=== Diagrama de Casos de Uso
+A continuación, se presenta un diagrama de casos de uso simplificado para **TaskApp Pro**, basado en las funcionalidades descritas:
+
+[plantuml]
+----
+@startuml
+title Caso de Uso TaskApp Pro
+left to right direction
+
+actor Usuario
+
+rectangle "Funcionalidades Básicas" as Basic {
+  usecase "Crear Tarea" as UC1
+  usecase "Marcar Tarea como Completada" as UC2
+  usecase "Eliminar Tarea" as UC3
+  usecase "Listar Tareas" as UC4
+}
+
+rectangle "Funcionalidades Pro" as Pro {
+  usecase "Asignar Fecha de Vencimiento" as UC5
+  usecase "Establecer Prioridad" as UC6
+  usecase "Configurar Recordatorios" as UC7
+}
+
+rectangle "Persistencia" as Persist {
+  usecase "Guardar Tareas" as UC8
+  usecase "Cargar Tareas" as UC9
+}
+
+Usuario --> UC1
+Usuario --> UC2
+Usuario --> UC3
+Usuario --> UC4
+Usuario --> UC5
+Usuario --> UC6
+Usuario --> UC7
+Usuario --> UC8
+Usuario --> UC9
+@enduml
+----
+
+Este diagrama ilustra las interacciones principales entre el **Usuario** y las funcionalidades de la aplicación. Las características opcionales están marcadas como tales.
+
+

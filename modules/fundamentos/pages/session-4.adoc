@@ -1,0 +1,406 @@
+= Sesión 4: Construcción de UI y Primer Punto de Variación
+
+Esta sesión se centra en la construcción de la interfaz de usuario (UI) para nuestra aplicación y en la implementación del primer mecanismo de variabilidad: los Feature Flags. Aprenderemos a traducir nuestros modelos de datos en vistas interactivas usando SwiftUI y List, y cómo controlar la variabilidad en tiempo de ejecución mediante flags de características.
+
+Utilizaremos este conocimiento para crear la UI base de "TaskApp Pro" y aplicar variabilidad a través de feature flags, sentando las bases para la arquitectura de LPS.
+
+====
+.Objetivos de la sesión
+- **Comprender** cómo traducir modelos de datos a interfaces de usuario con SwiftUI y List.
+- **Aplicar** la técnica de Feature Flags para implementar variabilidad en tiempo de ejecución.
+- **Construir** la UI base de la aplicación usando el patrón MVVM.
+- **Implementar** un primer punto de variación controlado por feature flags.
+====
+
+== Teoría: Implementación de Variabilidad y UI con SwiftUI (Cap. 5)
+
+La implementación de variabilidad es el proceso de traducir los modelos de características en código ejecutable. En esta sesión nos enfocamos en una técnica fundamental: los Feature Flags.
+
+=== ¿Qué son los Feature Flags?
+
+Los Feature Flags (o Feature Toggles) son variables booleanas que permiten activar o desactivar características en tiempo de ejecución sin necesidad de recompilar el código. Son ideales para:
+
+- **Variabilidad en Producción**: Permitir diferentes configuraciones para diferentes usuarios o mercados.
+- **Desarrollo Incremental**: Activar/desactivar features durante el desarrollo.
+- **Testing A/B**: Probar diferentes versiones de una feature.
+- **Rollbacks Seguros**: Desactivar rápidamente una feature problemática.
+
+=== Arquitectura de Feature Flags
+
+En nuestro proyecto MVVM, los feature flags se gestionan en la capa de Application:
+
+[source,swift]
+----
+struct AppConfig {
+    static var showDueDates: Bool = true
+    static var showPriorities: Bool = false
+    static var enableReminders: Bool = true
+}
+----
+
+=== SwiftUI y List: Construyendo la UI
+
+SwiftUI es el framework de Apple para crear interfaces de usuario de manera declarativa. La vista `List` es perfecta para mostrar colecciones de datos.
+
+==== Componentes Básicos de SwiftUI
+- **Views**: Estructuras que definen la apariencia y comportamiento de la UI.
+- **State**: Propiedades que pueden cambiar y actualizar la UI automáticamente.
+- **Bindings**: Conexiones entre vistas padre e hijo para compartir estado.
+
+==== La Vista List
+`List` muestra una colección de elementos en una lista scrollable. Es ideal para mostrar arrays de modelos.
+
+[source,swift]
+----
+List(tasks) { task in
+    TaskRowView(task: task)
+}
+----
+
+== Demostración: UI de "TaskApp Pro" con Feature Flags 👨‍🏫
+
+Vamos a construir la interfaz de usuario de "TaskApp Pro" paso a paso, integrando feature flags para controlar la variabilidad.
+
+=== Paso 1: Creación de AppConfig.swift
+Empezamos creando nuestro gestor de feature flags en la carpeta Application.
+
+[source,swift]
+----
+struct AppConfig {
+    static var showDueDates: Bool = true  <1>
+    static var showPriorities: Bool = false  <2>
+    static var enableReminders: Bool = true  <3>
+}
+----
+<1> **static var**: Variables estáticas compartidas por toda la app, accesibles sin instanciar la struct.
+<2> **Bool = false**: Tipo booleano con valor por defecto `false`, indicando que la feature está desactivada inicialmente.
+<3> **enableReminders**: Flag para controlar si los recordatorios están habilitados.
+
+=== Paso 2: Modelo de Datos Actualizado
+Recordemos nuestro modelo de datos con las características opcionales.
+
+[source,swift]
+----
+struct Task {
+    let id: UUID = UUID()  <1>
+    var title: String  <2>
+    var isCompleted: Bool = false  <3>
+    var dueDate: Date?  <4>
+    var priority: Priority?  <5>
+}
+
+enum Priority {
+    case low, medium, high  <6>
+}
+----
+<1> **UUID()**: Genera un identificador único universal para cada tarea.
+<2> **var title: String**: Propiedad variable para el título, requerida al crear la tarea.
+<3> **Bool = false**: Valor por defecto `false` para indicar que la tarea no está completada inicialmente.
+<4> **Date?**: Tipo opcional para la fecha de vencimiento, puede ser `nil` si no se establece.
+<5> **Priority?**: Enum opcional para la prioridad de la tarea.
+<6> **enum Priority**: Define los posibles valores de prioridad con casos `low`, `medium`, `high`.
+
+=== Paso 3: ViewModel con Estado
+Creamos el ViewModel que maneja la lógica y estado de la lista de tareas.
+
+[source,swift]
+----
+class TaskListViewModel: ObservableObject {  <1>
+    @Published var tasks: [Task] = [  <2>
+        Task(title: "Comprar leche", dueDate: Date().addingTimeInterval(86400)),  <3>
+        Task(title: "Hacer ejercicio", priority: .high),
+        Task(title: "Llamar a mamá")
+    ]
+}
+----
+<1> **ObservableObject**: Protocolo que permite que la clase notifique cambios a las vistas que la observan.
+<2> **@Published**: Anotación que marca la propiedad como observable; cuando cambia, actualiza automáticamente las vistas.
+<3> **Date().addingTimeInterval(86400)**: Crea una fecha un día en el futuro (86400 segundos = 1 día).
+
+=== Paso 4: Vista Principal con List
+Construimos la vista principal usando List para mostrar las tareas.
+
+[source,swift]
+----
+struct TaskListView: View {  <1>
+    @StateObject var viewModel = TaskListViewModel()  <2>
+
+    var body: some View {  <3>
+        NavigationView {  <4>
+            List(viewModel.tasks) { task in  <5>
+                TaskRowView(task: task)  <6>
+            }
+            .navigationTitle("TaskApp Pro")  <7>
+        }
+    }
+}
+----
+<1> **struct TaskListView: View**: Define una vista de SwiftUI que conforma al protocolo `View`.
+<2> **@StateObject**: Anotación para objetos observables que persisten durante la vida de la vista; crea una instancia del ViewModel.
+<3> **var body: some View**: Propiedad requerida que define el contenido de la vista.
+<4> **NavigationView**: Contenedor que proporciona navegación jerárquica en iOS, permitiendo push/pop de vistas.
+<5> **List(viewModel.tasks)**: Crea una lista scrollable con los elementos del array `tasks`.
+<6> **{ task in TaskRowView(task: task) }**: Closure que define cómo renderizar cada elemento de la lista.
+<7> **.navigationTitle("TaskApp Pro")**: Establece el título en la barra de navegación.
+
+=== Paso 5: Vista de Fila con Variabilidad
+Creamos la vista para cada fila, aplicando feature flags para mostrar/ocultar elementos.
+
+[source,swift]
+----
+struct TaskRowView: View {  <1>
+    let task: Task  <2>
+
+    var body: some View {
+        HStack {  <3>
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")  <4>
+            VStack(alignment: .leading) {  <5>
+                Text(task.title)  <6>
+                    .strikethrough(task.isCompleted)  <7>
+                if AppConfig.showDueDates, let dueDate = task.dueDate {  <8>
+                    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")  <9>
+                        .font(.caption)  <10>
+                        .foregroundColor(.secondary)  <11>
+                }
+                if AppConfig.showPriorities, let priority = task.priority {  <12>
+                    Text("Prioridad: \(priority.rawValue)")  <13>
+                        .font(.caption)
+                        .foregroundColor(priorityColor(for: priority))  <14>
+                }
+            }
+        }
+    }
+
+    private func priorityColor(for priority: Priority) -> Color {  <15>
+        switch priority {  <16>
+        case .low: return .green
+        case .medium: return .yellow
+        case .high: return .red
+        }
+    }
+}
+----
+<1> **struct TaskRowView: View**: Vista para representar una sola fila de tarea.
+<2> **let task: Task**: Propiedad inmutable que recibe la tarea a mostrar.
+<3> **HStack**: Contenedor horizontal que alinea elementos lado a lado.
+<4> **Image(systemName: ...)**: Muestra un ícono del sistema SF Symbols basado en el estado de completitud.
+<5> **VStack(alignment: .leading)**: Contenedor vertical que alinea elementos a la izquierda.
+<6> **Text(task.title)**: Muestra el título de la tarea.
+<7> **.strikethrough(task.isCompleted)**: Aplica tachado al texto si la tarea está completada.
+<8> **if AppConfig.showDueDates, let dueDate = task.dueDate**: Condicional que verifica el flag y desempaqueta opcional.
+<9> **dueDate.formatted(...)**: Formatea la fecha para mostrarla de manera legible.
+<10> **.font(.caption)**: Aplica fuente pequeña para texto secundario.
+<11> **.foregroundColor(.secondary)**: Color gris secundario para texto menos prominente.
+<12> **if AppConfig.showPriorities, let priority = task.priority**: Similar, controla visibilidad de prioridad.
+<13> **priority.rawValue**: Convierte el enum a string para mostrar.
+<14> **priorityColor(for: priority)**: Llama a función para determinar color basado en prioridad.
+<15> **private func**: Función privada que calcula el color según la prioridad.
+<16> **switch priority**: Estructura de control que devuelve color diferente por caso.
+
+=== Paso 6: Aplicación del Feature Flag
+Vemos cómo el feature flag `AppConfig.showDueDates` controla la visibilidad de las fechas de vencimiento. Cambiando `true` a `false`, las fechas desaparecen sin recompilar.
+
+[source,swift]
+----
+// En AppConfig.swift
+static var showDueDates: Bool = false  <1>
+
+// En TaskRowView.swift
+if AppConfig.showDueDates, let dueDate = task.dueDate {  <2>
+    // Este bloque se ejecuta solo si showDueDates es true
+    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
+}
+----
+<1> **Cambio de flag**: Al cambiar a `false`, la condición `if` no se cumple y el texto no se muestra.
+<2> **Condicional con flag**: La coma en Swift permite combinar condiciones; aquí verifica el flag y desempaqueta opcional.
+
+=== Paso 7: Hacer el Ícono Interactivo
+Para marcar tareas como completadas, necesitamos convertir el ícono en un botón interactivo.
+
+[source,swift]
+----
+struct TaskRowView: View {
+    let task: Task
+    let toggleCompletion: () -> Void  <1>
+
+    var body: some View {
+        HStack {
+            Button(action: toggleCompletion) {  <2>
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")  <3>
+                    .foregroundColor(task.isCompleted ? .green : .gray)  <4>
+            }
+            .buttonStyle(.plain)  <5>
+            // ... resto del código ...
+        }
+    }
+}
+----
+<1> **let toggleCompletion: () -> Void**: Closure que se ejecutará cuando se presione el botón.
+<2> **Button(action: toggleCompletion)**: Envuelve el ícono en un Button con la acción especificada.
+<3> **Image(systemName: ...)**: El ícono cambia basado en el estado de completitud.
+<4> **.foregroundColor(...)**: Color verde para completadas, gris para pendientes.
+<5> **.buttonStyle(.plain)**: Estilo plano para que no se vea como un botón tradicional.
+
+=== Paso 8: Actualizar el ViewModel
+Necesitamos una función en el ViewModel para alternar el estado de completitud de una tarea.
+
+[source,swift]
+----
+class TaskListViewModel: ObservableObject {
+    @Published var tasks: [Task] = [
+        Task(title: "Comprar leche", dueDate: Date().addingTimeInterval(86400)),
+        Task(title: "Hacer ejercicio", priority: .high),
+        Task(title: "Llamar a mamá")
+    ]
+
+    func toggleTaskCompletion(_ task: Task) {  <1>
+        if let index = tasks.firstIndex(where: { $0.id == task.id }) {  <2>
+            tasks[index].isCompleted.toggle()  <3>
+        }
+    }
+}
+----
+<1> **func toggleTaskCompletion(_ task: Task)**: Función que recibe la tarea a modificar.
+<2> **firstIndex(where: { $0.id == task.id })**: Encuentra el índice de la tarea por su ID único.
+<3> **tasks[index].isCompleted.toggle()**: Invierte el valor booleano de isCompleted.
+
+=== Paso 9: Conectar la Vista con el ViewModel
+Actualizamos TaskListView para pasar la función de alternancia a cada TaskRowView.
+
+[source,swift]
+----
+struct TaskListView: View {
+    @StateObject var viewModel = TaskListViewModel()
+
+    var body: some View {
+        NavigationView {
+            List(viewModel.tasks) { task in
+                TaskRowView(task: task, toggleCompletion: {  <1>
+                    viewModel.toggleTaskCompletion(task)  <2>
+                })
+            }
+            .navigationTitle("TaskApp Pro")
+        }
+    }
+}
+----
+<1> **toggleCompletion: { ... }**: Aquí estamos creando una **closure** (función anónima) que encapsula la lógica para alternar el estado de completitud. Esta closure se pasa como parámetro a TaskRowView.
+<2> **viewModel.toggleTaskCompletion(task)**: Dentro de la closure, llamamos al método del ViewModel, pasando la tarea específica que queremos modificar. La closure "captura" tanto el `viewModel` como la `task` del contexto donde se define.
+
+==== ¿Cómo Funciona Este Patrón? 🤔
+
+Este código implementa un patrón fundamental en SwiftUI llamado **"closure como callback"**. Vamos a desglosarlo:
+
+===== 1. La Closure se Define en TaskListView
+[source,swift]
+----
+TaskRowView(task: task, toggleCompletion: {  <1>
+    viewModel.toggleTaskCompletion(task)  <2>
+})
+----
+<1> **Creación de closure**: `{ viewModel.toggleTaskCompletion(task) }` es una función anónima que no se ejecuta inmediatamente, sino que se "guarda" para usar después.
+<2> **Captura de variables**: La closure captura referencias al `viewModel` (del scope de TaskListView) y a la `task` específica de esta iteración del bucle.
+
+===== 2. La Closure se Almacena en TaskRowView
+[source,swift]
+----
+struct TaskRowView: View {
+    let task: Task
+    let toggleCompletion: () -> Void  <1>
+    // ...
+}
+----
+<1> **Parámetro de función**: `toggleCompletion` es una propiedad que almacena la closure. Su tipo `() -> Void` significa "función que no recibe parámetros y no devuelve nada".
+
+===== 3. La Closure se Ejecuta en el Button
+[source,swift]
+----
+Button(action: toggleCompletion) {  <1>
+    // UI del botón
+}
+----
+<1> **Ejecución diferida**: Cuando el usuario toca el botón, SwiftUI ejecuta la closure almacenada en `toggleCompletion`, que a su vez llama a `viewModel.toggleTaskCompletion(task)`.
+
+===== 4. El Flujo Completo
+1. **Creación**: En `TaskListView`, se crea una closure que "recuerda" qué `viewModel` y qué `task` usar.
+2. **Paso**: La closure se pasa a `TaskRowView` como parámetro.
+3. **Almacenamiento**: `TaskRowView` guarda la closure en su propiedad `toggleCompletion`.
+4. **Ejecución**: Cuando se toca el botón, la closure se ejecuta, modificando el estado a través del ViewModel.
+5. **Actualización**: `@Published` notifica a SwiftUI, que redibuja la UI automáticamente.
+
+===== ¿Por Qué Este Patrón?
+- **Separación de responsabilidades**: La vista (`TaskRowView`) no sabe cómo modificar el estado, solo sabe que debe llamar a `toggleCompletion`.
+- **Reutilización**: `TaskRowView` puede usarse con diferentes ViewModels o lógicas.
+- **Testabilidad**: Podemos probar la lógica del ViewModel independientemente de la UI.
+- **Reactividad**: SwiftUI actualiza automáticamente la UI cuando cambia el estado observado.
+
+=== Paso 10: Hacer Task Mutable
+Para que el cambio se propague correctamente, necesitamos que Task sea una struct mutable.
+
+[source,swift]
+----
+struct Task {
+    let id: UUID = UUID()
+    var title: String  <1>
+    var isCompleted: Bool = false  <2>
+    var dueDate: Date?
+    var priority: Priority?
+
+    // Para identificar tareas en List necesitamos Identifiable
+    // Pero como Task ya tiene id único, podemos hacer que conforme al protocolo
+}
+----
+<1> **var title: String**: Ya es var, correcto.
+<2> **var isCompleted: Bool**: Ya es var, correcto.
+
+=== Paso 11: Conformar a Identifiable
+Para usar Task en List, necesitamos que conforme al protocolo Identifiable.
+
+[source,swift]
+----
+struct Task: Identifiable {  <1>
+    let id: UUID = UUID()  <2>
+    var title: String
+    var isCompleted: Bool = false
+    var dueDate: Date?
+    var priority: Priority?
+}
+----
+<1> **Identifiable**: Protocolo que requiere una propiedad `id` única.
+<2> **let id: UUID**: Propiedad inmutable que identifica cada tarea de forma única.
+
+== Práctica: Construye la UI de "HabitApp" con Feature Flags 👩‍💻👨‍💻
+
+En esta práctica aplicarás los conceptos de construcción de UI con SwiftUI y el uso de feature flags para implementar variabilidad en tiempo de ejecución. Utilizarás el diagrama de características de HabitApp que diseñaste en la sesión anterior.
+
+.Actividad: Construcción de UI Base con Feature Flags (1h 45m)
+****
+
+- **Crea** tu `AppConfig.swift` con feature flags para las características opcionales de tu diagrama.
+- **Implementa** el ViewModel para gestionar la lista de hábitos.
+- **Construye** la vista principal con `List` para mostrar los hábitos.
+- **Crea** la vista de fila (`HabitRowView`) aplicando feature flags para mostrar/ocultar elementos opcionales.
+- **Prueba** cambiando los valores de los flags y observa cómo cambia la UI.
+
+**Entregable**
+
+- Un Playground o proyecto Xcode con la UI funcional de "HabitApp".
+- Capturas de pantalla mostrando la UI con diferentes configuraciones de feature flags.
+- Sube el código al repositorio Git de tu grupo.
+
+****
+****
+
+- **Crea** tu `AppConfig.swift` con feature flags para las características opcionales de tu diagrama.
+- **Implementa** el ViewModel para gestionar la lista de hábitos.
+- **Construye** la vista principal con `List` para mostrar los hábitos.
+- **Crea** la vista de fila (`HabitRowView`) aplicando feature flags para mostrar/ocultar elementos opcionales.
+- **Prueba** cambiando los valores de los flags y observa cómo cambia la UI.
+
+**Entregable**
+
+- Un Playground o proyecto Xcode con la UI funcional de "HabitApp".
+- Capturas de pantalla mostrando la UI con diferentes configuraciones de feature flags.
+- Sube el código al repositorio Git de tu grupo.
+
+****

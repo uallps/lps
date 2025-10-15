@@ -1,3 +1,0 @@
-= Página extra (componente)
-
-include::../../../../modules/extras/pages/extra-page.adoc[]

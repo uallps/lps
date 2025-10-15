@@ -3,4 +3,4 @@ version: ~
 title: Líneas de Productos Software
 nav:
   - modules/ROOT/nav.adoc
-  - modules/extras/nav.adoc
+  - modules/fundamentos/nav.adoc
