@@ -1,0 +1,156 @@
+= Sesión 5: Navegación y Flujo de la Aplicación
+
+Esta sesión se enfoca en cómo estructurar el flujo de una aplicación mediante la navegación entre diferentes pantallas y cómo gestionar el estado compartido. Aprenderemos a usar `NavigationStack` para crear flujos de navegación jerárquicos, a pasar datos entre vistas con `@Binding` para permitir la edición, y a organizar nuestro desarrollo utilizando ramas de Git para trabajar en nuevas características de forma aislada.
+
+Utilizaremos este conocimiento para añadir una vista de detalle en "TaskApp Pro", permitiendo la edición de tareas, y sentaremos las bases de un flujo de trabajo colaborativo con Git.
+
+====
+.Objetivos de la sesión
+- **Implementar** navegación entre pantallas en SwiftUI con `NavigationStack`.
+- **Pasar datos** entre vistas y modificarlos usando `@Binding`.
+- **Entender** cómo se gestiona el desarrollo de features con ramas de Git.
+====
+
+== Teoría: Navegación, Paso de Datos y Git Flow (30 min)
+
+A medida que las aplicaciones crecen, necesitamos una forma de presentar múltiples pantallas y permitir que el usuario interactúe con los datos.
+
+=== Navegación con NavigationStack
+
+`NavigationStack` es un contenedor de vistas que gestiona una pila de vistas, permitiendo al usuario "empujar" (push) nuevas vistas a la pila y "sacar" (pop) para volver atrás. Es la forma moderna y recomendada de manejar la navegación jerárquica en SwiftUI.
+
+[source,swift]
+----
+NavigationStack {
+    List {
+        NavigationLink("Ir a la vista de detalle", destination: DetailView())
+    }
+    .navigationTitle("Vista Principal")
+}
+----
+
+=== Paso de Datos entre Vistas
+
+Para que las vistas se comuniquen, SwiftUI ofrece varios mecanismos:
+
+- **Inicializador simple**: Para pasar datos que la vista hija no modificará.
+- **@Binding**: Para pasar una referencia mutable a un dato, permitiendo que la vista hija modifique el estado de la vista padre.
+
+==== Ejemplo con @Binding
+
+**Vista Padre (dueña del estado)**
+[source,swift]
+----
+struct TaskListView: View {
+    @State private var tasks = [Task(title: "Comprar leche")]
+
+    var body: some View {
+        // ...
+        TaskDetailView(task: $tasks[0]) // Pasamos un binding con $
+    }
+}
+----
+
+**Vista Hija (recibe el binding)**
+[source,swift]
+----
+struct TaskDetailView: View {
+    @Binding var task: Task // Recibe una referencia mutable
+
+    var body: some View {
+        TextField("Título", text: $task.title) // Modifica directamente la propiedad
+    }
+}
+----
+
+=== Flujo de Trabajo con Git Flow
+
+Git Flow es un modelo de branching que ayuda a organizar el desarrollo. Las ramas principales son:
+
+- **`main` (o `master`)**: Contiene el código de producción estable.
+- **`develop`**: Rama de integración para las nuevas características.
+- **`feature/`**: Se crean a partir de `develop` para trabajar en una nueva funcionalidad. Una vez terminada, se fusiona de nuevo en `develop`.
+
+== Demostración: Navegación en "TaskApp Pro" (1h 15m) 👨‍🏫
+
+Vamos a implementar una vista de detalle para editar tareas en "TaskApp Pro".
+
+=== Paso 1: Crear la Vista de Detalle (`TaskDetailView`)
+
+Esta vista permitirá editar el título de una tarea.
+
+[source,swift]
+----
+import SwiftUI
+
+struct TaskDetailView: View {
+    @Binding var task: Task
+
+    var body: some View {
+        Form {
+            TextField("Título de la tarea", text: $task.title)
+        }
+        .navigationTitle("Detalle de la Tarea")
+    }
+}
+----
+
+=== Paso 2: Implementar `NavigationStack` en `TaskListView`
+
+Modificamos la vista principal para usar `NavigationStack` y `NavigationLink`.
+
+[source,swift]
+----
+struct TaskListView: View {
+    @StateObject var viewModel = TaskListViewModel()
+
+    var body: some View {
+        NavigationStack {
+            List($viewModel.tasks) { $task in // Usamos $ para obtener bindings
+                NavigationLink(destination: TaskDetailView(task: $task)) {
+                    TaskRowView(task: task, toggleCompletion: {
+                        viewModel.toggleTaskCompletion(task)
+                    })
+                }
+            }
+            .navigationTitle("TaskApp Pro")
+        }
+    }
+}
+----
+
+=== Paso 3: Crear una Rama de Git para una Nueva Feature
+
+Vamos a simular el inicio del desarrollo de una nueva característica usando Git.
+
+[source,bash]
+----
+# 1. Asegurarse de estar en la rama de desarrollo
+git checkout develop
+
+# 2. Crear y cambiar a una nueva rama para la feature
+git checkout -b feature/task-editing
+
+# 3. Ahora puedes empezar a trabajar en esta rama de forma segura
+----
+
+== Práctica: Navegación en "HabitApp" (1h 45m) 👩‍💻👨‍💻
+
+Ahora es tu turno de aplicar estos conceptos en "HabitApp".
+
+.Actividad: Implementar Navegación y Ramas de Git
+****
+- **Implementa** `NavigationStack` en tu vista principal para permitir la navegación a una vista de detalle de hábito.
+- **Crea** una `HabitDetailView` que permita modificar al menos una propiedad del hábito usando `@Binding`.
+- **Cada miembro del equipo**:
+    - **Crea** una rama de Git personal con el formato `feature/nombre-feature-tu-nombre` (ej: `feature/habit-tracker-juan`).
+    - **Realiza** los cambios en tu rama.
+    - **Confirma** tus cambios con un mensaje descriptivo.
+
+**Entregable**
+
+- Un Playground o proyecto Xcode con la navegación funcional.
+- Capturas de pantalla mostrando la vista de detalle y la modificación de un hábito.
+- Una captura de pantalla del historial de Git (`git log --oneline --graph`) mostrando las nuevas ramas de feature.
+- Sube el código al repositorio Git de tu grupo.
+****

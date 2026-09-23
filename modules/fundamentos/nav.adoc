@@ -5,3 +5,4 @@
 *** xref:session-1-taskapp.adoc[Introducción a TaskApp Pro]
 ** xref:session-3.adoc[Sesión 3: Diseño del Modelo y Diagrama de Características]
 ** xref:session-4.adoc[Sesión 4: Construcción de UI y Primer Punto de Variación]
+** xref:session-5.adoc[Sesión 5: Navegación y Flujo de la Aplicación]
