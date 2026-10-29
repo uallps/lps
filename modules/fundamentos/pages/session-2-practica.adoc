@@ -1,0 +1,121 @@
+= Práctica: definición inicial de BookApp
+
+En esta práctica cada equipo comenzará a definir su propia familia de productos software: **BookApp**.
+
+El objetivo es estudiar primero el dominio, proponer una visión de producto y distinguir de forma inicial entre el **núcleo del MVP** y la funcionalidad **opcional**.
+
+Todavía no formalizaremos la variabilidad mediante Diagramas de Características. Las relaciones alternativas, grupos OR/XOR y restricciones como `requires` o `excludes` se introducirán más adelante.
+
+====
+.Objetivos de la práctica
+- **Organizar** los equipos de trabajo del proyecto.
+- **Investigar** el dominio y productos existentes.
+- **Definir** una visión inicial para BookApp.
+- **Identificar** el Producto Mínimo Viable (MVP).
+- **Proponer** funcionalidad adicional.
+- **Marcar** qué funcionalidades se consideran opcionales.
+- **Realizar** prototipos iniciales que ayuden a comunicar la idea del producto.
+====
+
+== 1. Organización de equipos
+
+* Formad grupos de **5 personas**.
+* Anotad los miembros del equipo.
+* Elegid un nombre para el equipo si lo consideráis útil para identificar vuestro trabajo durante el curso.
+
+== 2. Investigación del dominio
+
+Antes de diseñar BookApp, investigad qué soluciones existen actualmente relacionadas con el dominio de los libros.
+
+No se busca un estudio exhaustivo ni una recopilación de capturas. El objetivo es comprender mejor el problema antes de decidir qué producto queréis construir.
+
+Seleccionad varias aplicaciones o productos que consideréis relevantes y analizad:
+
+* qué problema intentan resolver;
+* a qué tipo de usuario se dirigen;
+* qué funcionalidades ofrecen;
+* qué aspectos tienen en común;
+* en qué se diferencian;
+* qué decisiones de diseño o enfoque os parecen especialmente relevantes.
+
+A partir de esta investigación, redactad una breve conclusión sobre el estado actual del dominio.
+
+== 3. Visión inicial de BookApp
+
+Definid conceptualmente vuestra **BookApp**.
+
+La visión debe explicar qué queréis construir y por qué tendría sentido para un usuario.
+
+Responded, al menos, a estas preguntas:
+
+* ¿Qué problema pretende resolver vuestra BookApp?
+* ¿A qué tipo de usuario está dirigida?
+* ¿Qué valor aporta al usuario?
+* ¿Cuál sería la versión más sencilla que seguiría siendo útil?
+
+La respuesta debe quedar resumida posteriormente en **2–3 párrafos**.
+
+== 4. Definición del MVP
+
+Definid vuestro **MVP (Minimum Viable Product)**.
+
+El MVP debe contener únicamente la funcionalidad que consideréis necesaria para que BookApp tenga sentido como producto.
+
+Preparad una lista clara de esas funcionalidades.
+
+Para cada una, pensad si realmente debe estar presente en cualquier versión inicial de BookApp o si podría eliminarse manteniendo un producto útil.
+
+No intentéis todavía representar estas decisiones mediante un Diagrama de Características.
+
+== 5. Funcionalidad adicional y opcional
+
+Una vez definido el MVP, pensad en funcionalidades que podrían incorporarse a versiones más completas del producto.
+
+Preparad una segunda lista de funcionalidades adicionales.
+
+Para cada funcionalidad indicad únicamente una de estas dos situaciones:
+
+**MVP**:: pertenece al núcleo que habéis definido como mínimo para BookApp.
+
+**Opcional**:: podría estar presente en algunas versiones del producto y ausente en otras.
+
+IMPORTANT: Por ahora **no** clasifiquéis las funcionalidades como alternativas, grupos OR/XOR ni añadáis relaciones `requires` o `excludes`. Esta formalización se realizará más adelante al estudiar los Diagramas de Características.
+
+== 6. Prototipos
+
+Realizad uno o varios prototipos sencillos que representen vuestra visión inicial de BookApp.
+
+El objetivo del prototipo es comunicar:
+
+* cómo imagináis el producto;
+* cuáles son sus principales pantallas o puntos de interacción;
+* cómo accedería el usuario a la funcionalidad del MVP.
+
+No se busca todavía un diseño visual definitivo ni una implementación funcional.
+
+Podéis utilizar la herramienta de prototipado que consideréis más adecuada.
+
+== 7. Revisión dentro del equipo
+
+Antes de preparar la entrega, revisad conjuntamente vuestro trabajo.
+
+Comprobad que:
+
+* todos los miembros pueden explicar la visión de BookApp;
+* el MVP está claramente delimitado;
+* existe una diferencia comprensible entre el MVP y las funcionalidades opcionales;
+* los prototipos son coherentes con la visión descrita;
+* las conclusiones de la investigación de mercado han influido en las decisiones del equipo.
+
+== Entregable para la siguiente sesión
+
+Entregad un documento en **PDF o Markdown** que incluya:
+
+. **Miembros del equipo.**
+. **Breve análisis del mercado** y de las aplicaciones estudiadas.
+. **Visión de BookApp**, explicada en 2–3 párrafos.
+. **Lista de funcionalidades del MVP.**
+. **Lista de funcionalidades adicionales**, indicando cuáles consideráis opcionales.
+. **Uno o varios prototipos iniciales.**
+
+Este documento se reutilizará en las siguientes sesiones. Más adelante volveremos sobre estas decisiones para formalizar la variabilidad de la familia BookApp mediante modelos y diagramas de características.

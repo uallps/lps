@@ -1,0 +1,88 @@
+= Sesión 2: Ingeniería de LPS y definición de BookApp
+
+Esta sesión conecta los conceptos del **Capítulo 2. Ingeniería de LPS** con el arranque del proyecto grupal del curso.
+
+Durante el **Grupo Docente** estudiaremos el ámbito de una línea de productos, las estrategias de adopción y la separación entre Ingeniería del Dominio e Ingeniería de Aplicaciones.
+
+Durante el **Grupo de Trabajo** utilizaremos primero **TaskApp Pro** como ejemplo del profesor y, a continuación, cada equipo comenzará a definir su propia familia de productos: **BookApp**.
+
+====
+.Objetivos de la sesión
+- **Comprender** la importancia de delimitar el ámbito de una Línea de Productos Software.
+- **Conocer** las principales estrategias para abordar una LPS.
+- **Distinguir** entre Ingeniería del Dominio e Ingeniería de Aplicaciones.
+- **Aplicar** estos conceptos al ejemplo TaskApp Pro.
+- **Definir** la visión inicial y el MVP de BookApp.
+- **Identificar** funcionalidad común y funcionalidad opcional sin formalizar todavía un Diagrama de Características.
+====
+
+== Grupo Docente (2 h): Capítulo 2. Ingeniería de LPS
+
+La parte teórica sigue las transparencias del **Capítulo 2**.
+
+=== Ámbito y generalización
+
+Una Línea de Productos Software no pretende cubrir cualquier producto imaginable. Es necesario delimitar su **ámbito** y decidir qué grado de variabilidad merece la pena soportar.
+
+La generalización excesiva incrementa:
+
+* el coste de desarrollo;
+* la documentación necesaria;
+* las pruebas;
+* el mantenimiento;
+* el número de combinaciones posibles.
+
+=== Estrategias para desarrollar una LPS
+
+Se estudiarán las estrategias presentadas en el tema:
+
+* proactiva;
+* extractiva;
+* reactiva.
+
+Cada una parte de una situación distinta y supone diferentes niveles de planificación, inversión y evolución.
+
+=== Ingeniería del Dominio e Ingeniería de Aplicaciones
+
+Distinguiremos dos procesos complementarios:
+
+**Ingeniería del Dominio**:: desarrolla los elementos comunes de la familia, define el ámbito, estudia sus características y prepara los activos y mecanismos de producción.
+
+**Ingeniería de Aplicaciones**:: utiliza esos recursos para construir productos concretos a partir de requisitos específicos.
+
+=== Gestión
+
+La Ingeniería de LPS también requiere coordinación a nivel técnico y organizativo: estructura de equipos, gestión de recursos, planificación, seguimiento y mantenimiento del proceso de producción.
+
+== Grupo de Trabajo (2 h)
+
+=== Parte 1. TaskApp Pro
+
+Utilizaremos xref:session-2-taskapp.adoc[TaskApp Pro] como ejemplo común de la asignatura.
+
+El objetivo no es implementar todavía toda la aplicación, sino analizarla como **familia de productos**:
+
+* cuál es su núcleo mínimo;
+* qué funcionalidad aparece en todos los productos;
+* qué funcionalidad puede ser opcional;
+* qué productos diferentes podrían obtenerse;
+* qué elementos deberían reutilizarse entre ellos.
+
+TaskApp Pro será el ejemplo que el profesor irá desarrollando durante las siguientes sesiones.
+
+=== Parte 2. Proyecto BookApp
+
+Cada equipo realizará ahora un ejercicio equivalente sobre el dominio de los libros.
+
+La actividad completa está descrita en xref:session-2-practica.adoc[Práctica: definición inicial de BookApp].
+
+Durante la práctica:
+
+* se organizarán los equipos;
+* se estudiará brevemente el mercado y el dominio;
+* se definirá la visión inicial de BookApp;
+* se delimitará un MVP;
+* se identificarán funcionalidades adicionales y se marcarán las que se consideren opcionales;
+* se realizarán prototipos iniciales.
+
+IMPORTANT: En esta sesión todavía no formalizaremos relaciones alternativas, grupos OR/XOR, `requires` o `excludes`. Esa clasificación se realizará al introducir los Diagramas de Características.

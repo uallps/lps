@@ -1,87 +1,141 @@
-= Sesión 5: Navegación y Flujo de la Aplicación
+= Sesión 5: Navegación, paso de datos y Git Flow
+:lang: es
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+:icons: font
 
-Esta sesión se enfoca en cómo estructurar el flujo de una aplicación mediante la navegación entre diferentes pantallas y cómo gestionar el estado compartido. Aprenderemos a usar `NavigationStack` para crear flujos de navegación jerárquicos, a pasar datos entre vistas con `@Binding` para permitir la edición, y a organizar nuestro desarrollo utilizando ramas de Git para trabajar en nuevas características de forma aislada.
+Hasta ahora la aplicación tiene una sola pantalla. En esta sesión añadimos una *segunda pantalla* (el detalle de una tarea o de un libro) y aprendemos a navegar hasta ella, a pasarle datos y a editarlos. Lo hacemos sobre el paquete de la sesión anterior, de modo que funcione en los *dos productos* (SwiftUI y SwiftCrossUI). Como la navegación de los dos frameworks es distinta, la escribimos como *vistas propias de cada versión*, siguiendo el código del curso anterior para SwiftUI. Al final organizamos el trabajo del grupo con *ramas de Git*.
 
-Utilizaremos este conocimiento para añadir una vista de detalle en "TaskApp Pro", permitiendo la edición de tareas, y sentaremos las bases de un flujo de trabajo colaborativo con Git.
+El ejemplo guiado del profesor es *TaskApp Pro* y el trabajo del alumnado se hace sobre *BookApp*.
+
+[NOTE]
+====
+*Código de ejemplo:* https://github.com/uallps/TaskApp-SwiftCrossUI[uallps/TaskApp-SwiftCrossUI]. La etiqueta `sesion-5` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-SwiftCrossUI.git` y `git checkout sesion-5`.
+====
 
 ====
-.Objetivos de la sesión
-- **Implementar** navegación entre pantallas en SwiftUI con `NavigationStack`.
-- **Pasar datos** entre vistas y modificarlos usando `@Binding`.
-- **Entender** cómo se gestiona el desarrollo de features con ramas de Git.
+.Objetivos de aprendizaje
+* Navegar entre dos pantallas en SwiftUI y en SwiftCrossUI, con una vista propia de cada versión donde el framework lo exija.
+* Pasar datos a una vista hija con `@Binding` y con `@Bindable`.
+* Identificar qué cambia entre SwiftUI y SwiftCrossUI en la navegación.
+* Trabajar con ramas `feature/` según Git Flow en el repositorio del grupo.
 ====
 
-== Teoría: Navegación, Paso de Datos y Git Flow (30 min)
+== Teoría: Navegación, paso de datos y Git Flow (30 min)
 
-A medida que las aplicaciones crecen, necesitamos una forma de presentar múltiples pantallas y permitir que el usuario interactúe con los datos.
+=== Navegar entre pantallas
 
-=== Navegación con NavigationStack
+Navegar es cambiar la vista que se muestra y poder volver a la anterior. `NavigationStack` es el contenedor con una *pila* de pantallas: se «empuja» una vista nueva y se «saca» para volver. Existe en SwiftUI y en SwiftCrossUI, pero con una API distinta:
 
-`NavigationStack` es un contenedor de vistas que gestiona una pila de vistas, permitiendo al usuario "empujar" (push) nuevas vistas a la pila y "sacar" (pop) para volver atrás. Es la forma moderna y recomendada de manejar la navegación jerárquica en SwiftUI.
+[cols="2,3,3",options="header"]
+|===
+| | SwiftUI | SwiftCrossUI
 
-[source,swift]
-----
-NavigationStack {
-    List {
-        NavigationLink("Ir a la vista de detalle", destination: DetailView())
-    }
-    .navigationTitle("Vista Principal")
-}
-----
+| Crear la pila
+| `NavigationStack { ... }`
+| `NavigationStack(path: $path) { ... }`: la ruta es *obligatoria*.
 
-=== Paso de Datos entre Vistas
+| Enlace a otra pantalla
+| `NavigationLink(destination: Vista()) { ... }` o `NavigationLink(titulo, value: valor)`
+| `NavigationLink(titulo, value: valor, path: $path)`: recibe la ruta y el texto es un `String`.
 
-Para que las vistas se comuniquen, SwiftUI ofrece varios mecanismos:
+| Dónde se declara el destino
+| Dentro del `NavigationLink` o con `.navigationDestination(for:)` sobre el contenido de la pila.
+| `.navigationDestination(for:)` sobre la propia `NavigationStack`.
 
-- **Inicializador simple**: Para pasar datos que la vista hija no modificará.
-- **@Binding**: Para pasar una referencia mutable a un dato, permitiendo que la vista hija modifique el estado de la vista padre.
+| Botón de volver
+| Lo añade el sistema.
+| No existe: se hace con `path.removeLast()`.
 
-==== Ejemplo con @Binding
+| Título y formularios
+| `.navigationTitle` y `Form`.
+| No existen.
 
-**Vista Padre (dueña del estado)**
-[source,swift]
-----
-struct TaskListView: View {
-    @State private var tasks = [Task(title: "Comprar leche")]
+| Valor de la ruta
+| `Hashable`
+| `Codable`
+|===
 
-    var body: some View {
-        // ...
-        TaskDetailView(task: $tasks[0]) // Pasamos un binding con $
-    }
-}
-----
+Como la forma de escribirlo cambia, la navegación *no se puede compartir*. Igual que la fila de la sesión anterior, se escribe una versión en cada carpeta de vistas, con el mismo nombre y la misma API pública, y *sin `#if`* entre versiones. La aplicación solo llama a `TaskListView()` y recibe la de la versión activa.
 
-**Vista Hija (recibe el binding)**
+=== Paso de datos entre vistas
+
+[cols="1,3",options="header"]
+|===
+| Mecanismo | Cuándo se usa
+
+| Inicializador simple
+| La vista hija solo *lee* el dato.
+
+| `@Binding`
+| La vista hija *modifica* un valor que pertenece a la vista padre.
+
+| `@Bindable`
+| La vista hija edita las propiedades de un objeto `@Observable` y necesita bindings con `$`.
+
+| Closure
+| La vista hija *avisa* de una acción (como volver) sin conocer a quien la gestiona.
+|===
+
+*`@Binding`.* La vista padre crea el binding y la hija lo recibe. En SwiftUI, `List($viewModel.tasks) { $task in ... }` da un binding por tarea:
+
 [source,swift]
 ----
 struct TaskDetailView: View {
-    @Binding var task: Task // Recibe una referencia mutable
+    @Binding var task: Task
 
     var body: some View {
-        TextField("Título", text: $task.title) // Modifica directamente la propiedad
+        Form {
+            TextField("Título de la tarea", text: $task.title)
+        }
     }
 }
 ----
 
-=== Flujo de Trabajo con Git Flow
+*`@Bindable`.* Si el dato es un objeto `@Observable`, se declara con `@Bindable` y se obtienen bindings de sus propiedades:
 
-Git Flow es un modelo de branching que ayuda a organizar el desarrollo. Las ramas principales son:
+[source,swift]
+----
+@Observable
+final class Borrador {
+    var titulo = ""
+}
 
-- **`main` (o `master`)**: Contiene el código de producción estable.
-- **`develop`**: Rama de integración para las nuevas características.
-- **`feature/`**: Se crean a partir de `develop` para trabajar en una nueva funcionalidad. Una vez terminada, se fusiona de nuevo en `develop`.
+struct EditorView: View {
+    @Bindable var borrador: Borrador
 
-== Demostración: Navegación en "TaskApp Pro" (1h 15m) 👨‍🏫
+    var body: some View {
+        TextField("Título", text: $borrador.titulo)
+    }
+}
+----
 
-Vamos a implementar una vista de detalle para editar tareas en "TaskApp Pro".
+=== Flujo de trabajo con Git Flow
 
-=== Paso 1: Crear la Vista de Detalle (`TaskDetailView`)
+Git Flow es un modelo de ramas que ayuda a organizar el desarrollo en equipo. Las ramas principales son:
 
-Esta vista permitirá editar el título de una tarea.
+* *`main`:* el código estable.
+* *`develop`:* la rama de integración de las nuevas características.
+* *`feature/`:* se crean a partir de `develop` para trabajar en una característica. Cuando está terminada, se fusiona de nuevo en `develop`.
+
+En nuestro proyecto cada característica (F1, F2… y las originales) tiene su rama. Hay dos puntos que conviene cuidar:
+
+* *No se suben las compilaciones.* El `.gitignore` debe incluir `.build/`. El fichero `Package.resolved` sí se sube.
+* *El `Package.swift` lo tocará todo el mundo.* Cada característica puede añadir un trait, así que es el fichero donde más conflictos aparecerán al integrar. Se resuelven conservando los traits de las dos ramas.
+
+== Demostración: detalle de tarea en TaskApp Pro (1 h 15 min)
+
+Partimos del paquete de la sesión 4 (`TaskCore`, las dos carpetas de vistas, `TaskUI` y `TaskApp`). Añadimos una pantalla de detalle para editar el título de una tarea y la navegación hasta ella, con una vista propia en cada versión.
+
+=== Paso 1: la vista de detalle, una por versión
+
+*Versión SwiftUI* (`TaskViewsSwiftUI/TaskDetailView.swift`): un `Form` cuyo título de ventana es el título de la tarea.
 
 [source,swift]
 ----
 import SwiftUI
+import TaskCore
 
 struct TaskDetailView: View {
     @Binding var task: Task
@@ -90,67 +144,241 @@ struct TaskDetailView: View {
         Form {
             TextField("Título de la tarea", text: $task.title)
         }
-        .navigationTitle("Detalle de la Tarea")
+        .navigationTitle($task.title)
     }
 }
 ----
 
-=== Paso 2: Implementar `NavigationStack` en `TaskListView`
-
-Modificamos la vista principal para usar `NavigationStack` y `NavigationLink`.
+*Versión SwiftCrossUI* (`TaskViewsSwiftCrossUI/TaskDetailView.swift`): sin `Form` ni `.navigationTitle`, y la pila no añade un botón de volver, así que la vista recibe una acción para volver.
 
 [source,swift]
 ----
-struct TaskListView: View {
-    @StateObject var viewModel = TaskListViewModel()
+import SwiftCrossUI
+import TaskCore
+
+/// SwiftCrossUI no tiene `Form` ni `.navigationTitle` y la pila no añade un
+/// botón de volver: la vista recibe una acción para volver.
+struct TaskDetailView: View {
+    @Binding var task: Task
+    let close: () -> Void
 
     var body: some View {
+        VStack {
+            Text(task.title)
+                .font(.title)
+            TextField("Título de la tarea", text: $task.title)
+            Button("Volver") {
+                close()
+            }
+        }
+        .padding()
+    }
+}
+----
+
+=== Paso 2: la lista con navegación, una por versión
+
+*Versión SwiftUI* (`TaskViewsSwiftUI/TaskListView.swift`), con el `NavigationStack` y el `NavigationLink` del curso anterior:
+
+[source,swift]
+----
+import SwiftUI
+import TaskCore
+
+public struct TaskListView: View {
+    @State private var viewModel = TaskListViewModel()
+    @State private var config = AppConfig()
+
+    public init() {}
+
+    public var body: some View {
         NavigationStack {
-            List($viewModel.tasks) { $task in // Usamos $ para obtener bindings
+            List($viewModel.tasks) { $task in
                 NavigationLink(destination: TaskDetailView(task: $task)) {
-                    TaskRowView(task: task, toggleCompletion: {
-                        viewModel.toggleTaskCompletion(task)
-                    })
+                    TaskRowView(
+                        task: task,
+                        showDueDates: config.showDueDates,
+                        showPriorities: config.showPriorities,
+                        toggleCompletion: {
+                            viewModel.toggleCompletion(id: task.id)
+                        }
+                    )
                 }
             }
-            .navigationTitle("TaskApp Pro")
+            .toolbar {
+                Toggle("Fechas", isOn: $config.showDueDates)
+                Toggle("Prioridades", isOn: $config.showPriorities)
+                Button("Añadir Tarea") {
+                    viewModel.addTask()
+                }
+            }
+            .navigationTitle("Tareas")
         }
     }
 }
 ----
 
-=== Paso 3: Crear una Rama de Git para una Nueva Feature
+*Versión SwiftCrossUI* (`TaskViewsSwiftCrossUI/TaskListView.swift`): la pila con ruta, `NavigationLink` con la ruta, el destino sobre la pila y el binding de la tarea por identificador.
 
-Vamos a simular el inicio del desarrollo de una nueva característica usando Git.
-
-[source,bash]
+[source,swift]
 ----
-# 1. Asegurarse de estar en la rama de desarrollo
-git checkout develop
+import Foundation
+import SwiftCrossUI
+import TaskCore
 
-# 2. Crear y cambiar a una nueva rama para la feature
-git checkout -b feature/task-editing
+/// En SwiftCrossUI `NavigationStack` exige una ruta, `NavigationLink` recibe esa
+/// ruta y el destino se declara sobre la propia pila.
+public struct TaskListView: View {
+    @State var viewModel = TaskListViewModel()
+    @State var config = AppConfig()
+    @State var path = NavigationPath()
 
-# 3. Ahora puedes empezar a trabajar en esta rama de forma segura
+    public init() {}
+
+    public var body: some View {
+        NavigationStack(path: $path) {
+            VStack(alignment: .leading) {
+                Text("Tareas")
+                    .font(.title)
+                HStack {
+                    Toggle("Fechas", isOn: $config.showDueDates)
+                    Toggle("Prioridades", isOn: $config.showPriorities)
+                    Button("Añadir Tarea") {
+                        viewModel.addTask()
+                    }
+                }
+                ForEach(viewModel.tasks) { task in
+                    HStack {
+                        TaskRowView(
+                            task: task,
+                            showDueDates: config.showDueDates,
+                            showPriorities: config.showPriorities,
+                            toggleCompletion: {
+                                viewModel.toggleCompletion(id: task.id)
+                            }
+                        )
+                        NavigationLink("Detalle", value: task.id, path: $path)
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationDestination(for: UUID.self) { id in
+            TaskDetailView(task: binding(for: id), close: { path.removeLast() })
+        }
+    }
+
+    private func binding(for id: UUID) -> Binding<Task> {
+        Binding(
+            get: { viewModel.tasks.first { $0.id == id } ?? Task(title: "") },
+            set: { newValue in
+                guard let index = viewModel.tasks.firstIndex(where: { $0.id == id }) else { return }
+                viewModel.tasks[index] = newValue
+            }
+        )
+    }
+}
 ----
 
-== Práctica: Navegación en "HabitApp" (1h 45m) 👩‍💻👨‍💻
+Las dos reutilizan `TaskRowView` y `AppConfig`, y las dos tienen la misma API pública: `TaskListView()`.
 
-Ahora es tu turno de aplicar estos conceptos en "HabitApp".
+=== Paso 3: la aplicación no conoce la versión
 
-.Actividad: Implementar Navegación y Ramas de Git
-****
-- **Implementa** `NavigationStack` en tu vista principal para permitir la navegación a una vista de detalle de hábito.
-- **Crea** una `HabitDetailView` que permita modificar al menos una propiedad del hábito usando `@Binding`.
-- **Cada miembro del equipo**:
-    - **Crea** una rama de Git personal con el formato `feature/nombre-feature-tu-nombre` (ej: `feature/habit-tracker-juan`).
-    - **Realiza** los cambios en tu rama.
-    - **Confirma** tus cambios con un mensaje descriptivo.
+El ejecutable solo importa la fachada y llama a la vista. No hay ningún `#if` ni ninguna referencia al framework:
 
-**Entregable**
+[source,swift]
+----
+import TaskUI
 
-- Un Playground o proyecto Xcode con la navegación funcional.
-- Capturas de pantalla mostrando la vista de detalle y la modificación de un hábito.
-- Una captura de pantalla del historial de Git (`git log --oneline --graph`) mostrando las nuevas ramas de feature.
-- Sube el código al repositorio Git de tu grupo.
-****
+@main
+struct TaskApp: App {
+    var body: some Scene {
+        WindowGroup("TaskApp") {
+            TaskListView()
+        }
+    }
+}
+----
+
+[source,shell]
+----
+swift run                           # SwiftUI
+swift run --traits SwiftCrossUI     # SwiftCrossUI
+----
+
+Preguntas para comentar: ¿qué se escribe una sola vez (modelo, ViewModel, flags) y qué dos veces (navegación, detalle, fila)? ¿Qué hay que hacer a mano en SwiftCrossUI que en SwiftUI hace el sistema (volver, título)? ¿Se ven igual las dos versiones? ¿Por qué no?
+
+=== Paso 4: una rama de Git para una nueva característica
+
+[source,shell]
+----
+# 1. Situarse en la rama de integración (si no existe: git switch -c develop)
+git switch develop
+
+# 2. Crear y cambiar a una rama para la característica
+git switch -c feature/task-editing
+
+# 3. Trabajar, y confirmar los cambios con un mensaje descriptivo
+git add .
+git commit -m "feat: add task detail view"
+
+# 4. Volver a develop e integrar la característica
+git switch develop
+git merge --no-ff feature/task-editing
+
+# 5. Ver el historial con las ramas
+git log --oneline --graph
+----
+
+== Actividad: detalle de libro en BookApp con dos productos (1 h 45 min)
+
+Añadid a *BookApp* una pantalla de detalle y la navegación hasta ella, con una vista propia en cada versión (SwiftUI y SwiftCrossUI), y trabajad en ramas de Git.
+
+=== Qué hay que hacer
+
+. *Crear la vista de detalle del libro en cada carpeta de vistas*, que permita modificar al menos el título y el estado de lectura. La de SwiftUI usa un `Form`; la de SwiftCrossUI recibe además una acción para volver.
+. *Crear la lista con navegación en cada carpeta de vistas*, de modo que desde el listado se llegue al detalle y se pueda volver. La aplicación solo debe llamar a esa vista, sin `#if`.
+. *Comprobar* que lo que se edita en el detalle aparece en el listado al volver.
+. *Comprobar los dos productos* con `swift run` y con `swift run --traits SwiftCrossUI`.
+. *Trabajar con ramas.* Cada miembro del equipo:
+  * crea una rama personal con el formato `feature/nombre-feature-tu-nombre`;
+  * hace los cambios en su rama y los confirma con mensajes descriptivos;
+  * integra su rama en `develop`.
+
+=== Comprobad vuestro diseño
+
+* ¿Quién es el dueño del dato que se edita: el listado, el detalle o el ViewModel? ¿Qué pasaría si el detalle recibiera una *copia* del libro?
+* ¿Qué parte de la navegación tuvisteis que escribir dos veces y qué hace el sistema en SwiftUI que en SwiftCrossUI hay que hacer a mano?
+* ¿Dónde deberían ir los datos de una característica opcional (por ejemplo, el progreso) para que el detalle funcione también con ella desactivada?
+* ¿Qué ficheros esperáis que den conflicto al integrar las ramas del equipo?
+
+== Entregable y criterios de revisión
+
+Cada grupo debe subir a su repositorio:
+
+* El paquete de BookApp con la navegación al detalle funcionando en los dos productos.
+* Dos capturas del detalle y de la modificación de un libro: una con SwiftUI y otra con SwiftCrossUI.
+* Una captura del historial de Git (`git log --oneline --graph`) con las ramas de característica de cada miembro.
+* Un `.gitignore` que excluya `.build/`.
+
+[cols="1,3",options="header"]
+|===
+| Qué se evalúa | Qué debéis demostrar
+
+| *Navegación*
+| Se llega al detalle desde el listado y se vuelve, en los dos productos.
+
+| *Paso de datos*
+| El detalle edita el libro real y el cambio se ve en el listado.
+
+| *Vistas por versión*
+| El detalle y la navegación tienen una versión en cada carpeta de vistas, con la misma API, y la aplicación no usa `#if`.
+
+| *Git Flow*
+| Cada miembro tiene su rama `feature/` y todas están integradas en `develop`.
+|===
+
+[IMPORTANT]
+====
+En esta sesión *no* se exige implementar F2–F5 ni las características originales. El objetivo es tener la navegación al detalle y el flujo de ramas funcionando para poder construir cada característica sobre ellos.
+====

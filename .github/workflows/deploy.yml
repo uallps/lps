@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,12 +24,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
-      - name: Install Antora
-        run: |
-          npm install -g @antora/cli @antora/site-generator asciidoctor asciidoctor-kroki
+          node-version: "20"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Generate site
-        run: antora antora-playbook.yml
+        run: npx antora antora-playbook.yml
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

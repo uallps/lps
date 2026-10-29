@@ -1,178 +1,427 @@
-= Sesión 4: Construcción de UI y Primer Punto de Variación
+= Sesión 4: SwiftCrossUI y proyecto con varios productos
+:lang: es
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+:icons: font
 
-Esta sesión se centra en la construcción de la interfaz de usuario (UI) para nuestra aplicación y en la implementación del primer mecanismo de variabilidad: los Feature Flags. Aprenderemos a traducir nuestros modelos de datos en vistas interactivas usando SwiftUI y List, y cómo controlar la variabilidad en tiempo de ejecución mediante flags de características.
+En la sesión 3 construimos el primer listado con MVVM usando SwiftUI. Hoy preparamos el *proyecto* para que de un mismo repositorio salgan *varios productos*: uno con SwiftUI y otro con *SwiftCrossUI*, que también funciona en Linux. Después usamos esa misma estructura para el primer mecanismo de variabilidad: los *feature flags*, tanto en ejecución como en compilación (variables de compilador, traits y schemes).
 
-Utilizaremos este conocimiento para crear la UI base de "TaskApp Pro" y aplicar variabilidad a través de feature flags, sentando las bases para la arquitectura de LPS.
+El ejemplo guiado del profesor es *TaskApp Pro* y el trabajo del alumnado se hace sobre *BookApp*.
+
+[NOTE]
+====
+*Código de ejemplo:* https://github.com/uallps/TaskApp-SwiftCrossUI[uallps/TaskApp-SwiftCrossUI]. La etiqueta `sesion-4` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-SwiftCrossUI.git` y `git checkout sesion-4`.
+====
 
 ====
-.Objetivos de la sesión
-- **Comprender** cómo traducir modelos de datos a interfaces de usuario con SwiftUI y List.
-- **Aplicar** la técnica de Feature Flags para implementar variabilidad en tiempo de ejecución.
-- **Construir** la UI base de la aplicación usando el patrón MVVM.
-- **Implementar** un primer punto de variación controlado por feature flags.
+.Objetivos de aprendizaje
+* Explicar qué es *SwiftCrossUI* y en qué se diferencia de SwiftUI.
+* Añadir SwiftCrossUI a un proyecto como dependencia de *Swift Package Manager*.
+* Separar el proyecto en un núcleo común, una fachada de interfaz y la aplicación.
+* Definir *productos* distintos con los *traits* de Swift Package Manager.
+* Compilar y ejecutar el mismo código con SwiftUI y con SwiftCrossUI.
+* Escribir una *vista propia de cada versión* cuando SwiftCrossUI no soporta lo que usa SwiftUI.
+* Activar o desactivar una característica con un *feature flag en ejecución*, sin romper el Core.
+* Definir *variables de compilación* de varias formas y usarlas con `#if`.
+* Explicar qué es un *scheme* de Xcode y cómo permite lanzar variantes del producto.
 ====
 
-== Teoría: Implementación de Variabilidad y UI con SwiftUI (Cap. 5)
+== ¿Qué es SwiftCrossUI?
 
-La implementación de variabilidad es el proceso de traducir los modelos de características en código ejecutable. En esta sesión nos enfocamos en una técnica fundamental: los Feature Flags.
+*SwiftCrossUI* es un framework para crear interfaces gráficas con una sintaxis *parecida a SwiftUI*, pero que funciona en varias plataformas. Es un proyecto de código abierto (https://github.com/moreSwift/swift-cross-ui[moreSwift/swift-cross-ui]) y no pertenece a Apple.
 
-=== ¿Qué son los Feature Flags?
+* Se escribe en Swift con vistas declarativas (`VStack`, `Text`, `Button`, `ForEach`…), `@State` y `@main struct ... : App`.
+* No dibuja los controles por su cuenta: usa un *backend* nativo de cada plataforma. En macOS, *AppKit*; en Linux, *GTK4*; también existen backends para iOS (UIKit) y Windows (WinUI).
+* Desde la versión *0.10.0* admite la macro `@Observable`, así que el mismo ViewModel de la sesión 3 sirve en SwiftUI y en SwiftCrossUI.
 
-Los Feature Flags (o Feature Toggles) son variables booleanas que permiten activar o desactivar características en tiempo de ejecución sin necesidad de recompilar el código. Son ideales para:
+[cols="1,2,2",options="header"]
+|===
+| | SwiftUI | SwiftCrossUI
 
-- **Variabilidad en Producción**: Permitir diferentes configuraciones para diferentes usuarios o mercados.
-- **Desarrollo Incremental**: Activar/desactivar features durante el desarrollo.
-- **Testing A/B**: Probar diferentes versiones de una feature.
-- **Rollbacks Seguros**: Desactivar rápidamente una feature problemática.
+| Quién lo mantiene
+| Apple
+| Comunidad (moreSwift)
 
-=== Arquitectura de Feature Flags
+| Plataformas
+| macOS, iOS, tvOS, watchOS, visionOS
+| macOS, Linux, Windows (según el backend) e iOS
 
-En nuestro proyecto MVVM, los feature flags se gestionan en la capa de Application:
+| Cómo se obtiene
+| Viene con Xcode
+| Dependencia de Swift Package Manager
+
+| API
+| Muy amplia
+| Parecida, pero *no idéntica* y más reducida
+|===
+
+[NOTE]
+====
+SwiftCrossUI no intenta replicar SwiftUI al detalle. Puede haber controles o modificadores que existan en uno y no en el otro, y como es una versión `0.x`, su API todavía puede cambiar entre versiones. Por eso fijamos la versión *0.10.0*.
+====
+
+== Instalar SwiftCrossUI con Swift Package Manager
+
+SwiftCrossUI no se instala en el sistema: se declara como *dependencia* en el `Package.swift` del proyecto y Swift Package Manager (SwiftPM) la descarga y la compila.
+
+=== Requisitos
+
+* *macOS:* Xcode o las herramientas de Swift 6.1 o superior. No hace falta instalar nada más: se usa el backend AppKit.
+* *Linux:* Swift 6.1 o superior y las librerías de desarrollo de GTK4.
+
+[source,shell]
+----
+sudo apt-get update
+sudo apt-get install -y clang pkg-config libgtk-4-dev
+----
+
+=== Declarar la dependencia
+
+Se añade el paquete en `dependencies` y los dos productos que necesitamos en el target ejecutable:
 
 [source,swift]
 ----
-struct AppConfig {
-    static var showDueDates: Bool = true
-    static var showPriorities: Bool = false
-    static var enableReminders: Bool = true
-}
-----
+// swift-tools-version: 6.1
+import PackageDescription
 
-=== SwiftUI y List: Construyendo la UI
-
-SwiftUI es el framework de Apple para crear interfaces de usuario de manera declarativa. La vista `List` es perfecta para mostrar colecciones de datos.
-
-==== Componentes Básicos de SwiftUI
-- **Views**: Estructuras que definen la apariencia y comportamiento de la UI.
-- **State**: Propiedades que pueden cambiar y actualizar la UI automáticamente.
-- **Bindings**: Conexiones entre vistas padre e hijo para compartir estado.
-
-==== La Vista List
-`List` muestra una colección de elementos en una lista scrollable. Es ideal para mostrar arrays de modelos.
-
-[source,swift]
-----
-List(tasks) { task in
-    TaskRowView(task: task)
-}
-----
-
-== Demostración: UI de "TaskApp Pro" con Feature Flags 👨‍🏫
-
-Vamos a construir la interfaz de usuario de "TaskApp Pro" paso a paso, integrando feature flags para controlar la variabilidad.
-
-=== Paso 1: Creación de AppConfig.swift
-Empezamos creando nuestro gestor de feature flags en la carpeta Application.
-
-[source,swift]
-----
-struct AppConfig {
-    static var showDueDates: Bool = true  <1>
-    static var showPriorities: Bool = false  <2>
-    static var enableReminders: Bool = true  <3>
-}
-----
-<1> **static var**: Variables estáticas compartidas por toda la app, accesibles sin instanciar la struct.
-<2> **Bool = false**: Tipo booleano con valor por defecto `false`, indicando que la feature está desactivada inicialmente.
-<3> **enableReminders**: Flag para controlar si los recordatorios están habilitados.
-
-=== Paso 2: Modelo de Datos Actualizado
-Recordemos nuestro modelo de datos con las características opcionales.
-
-[source,swift]
-----
-struct Task {
-    let id: UUID = UUID()  <1>
-    var title: String  <2>
-    var isCompleted: Bool = false  <3>
-    var dueDate: Date?  <4>
-    var priority: Priority?  <5>
-}
-
-enum Priority {
-    case low, medium, high  <6>
-}
-----
-<1> **UUID()**: Genera un identificador único universal para cada tarea.
-<2> **var title: String**: Propiedad variable para el título, requerida al crear la tarea.
-<3> **Bool = false**: Valor por defecto `false` para indicar que la tarea no está completada inicialmente.
-<4> **Date?**: Tipo opcional para la fecha de vencimiento, puede ser `nil` si no se establece.
-<5> **Priority?**: Enum opcional para la prioridad de la tarea.
-<6> **enum Priority**: Define los posibles valores de prioridad con casos `low`, `medium`, `high`.
-
-=== Paso 3: ViewModel con Estado
-Creamos el ViewModel que maneja la lógica y estado de la lista de tareas.
-
-[source,swift]
-----
-class TaskListViewModel: ObservableObject {  <1>
-    @Published var tasks: [Task] = [  <2>
-        Task(title: "Comprar leche", dueDate: Date().addingTimeInterval(86400)),  <3>
-        Task(title: "Hacer ejercicio", priority: .high),
-        Task(title: "Llamar a mamá")
+let package = Package(
+    name: "TaskApp",
+    platforms: [.macOS(.v14), .iOS(.v17)],
+    products: [
+        .executable(name: "TaskApp", targets: ["TaskApp"]),
+    ],
+    dependencies: [
+        .package(
+            url: "https://github.com/moreSwift/swift-cross-ui.git",
+            .upToNextMinor(from: "0.10.0")
+        ),
+    ],
+    targets: [
+        .executableTarget(
+            name: "TaskApp",
+            dependencies: [
+                .product(name: "SwiftCrossUI", package: "swift-cross-ui"),
+                .product(name: "DefaultBackend", package: "swift-cross-ui"),
+            ]
+        ),
     ]
-}
+)
 ----
-<1> **ObservableObject**: Protocolo que permite que la clase notifique cambios a las vistas que la observan.
-<2> **@Published**: Anotación que marca la propiedad como observable; cuando cambia, actualiza automáticamente las vistas.
-<3> **Date().addingTimeInterval(86400)**: Crea una fecha un día en el futuro (86400 segundos = 1 día).
 
-=== Paso 4: Vista Principal con List
-Construimos la vista principal usando List para mostrar las tareas.
+* `.package(url:…)` indica *de dónde* se descarga y qué versiones se aceptan. `.upToNextMinor(from: "0.10.0")` admite 0.10.x pero no 0.11, que podría romper la API.
+* `SwiftCrossUI` es el framework de vistas y `DefaultBackend` elige el backend adecuado a la plataforma (AppKit en macOS, GTK4 en Linux).
+* La primera compilación descarga y compila el paquete y tarda varios minutos. SwiftPM anota la versión resuelta en `Package.resolved`; hay que subir ese fichero al repositorio.
+
+[IMPORTANT]
+====
+*Trabajad con un paquete, no con un proyecto de Xcode.* Si creáis un proyecto de aplicación con Xcode (`.xcodeproj`) y después compiláis con `swift run` en la carpeta del proyecto, SwiftPM crea una carpeta `.build` con las dependencias descargadas dentro del proyecto. Xcode la recoge y deja de resolver el proyecto con el error:
+
+`multiple packages ('package-benchmark', 'swift-benchmark') declare targets with a conflicting name: 'Benchmark'`
+
+SwiftCrossUI 0.10.0 y una de sus dependencias declaran un target con ese mismo nombre. SwiftPM lo tolera y Xcode, cuando ve esas carpetas dentro del proyecto, no.
+
+* Cread el proyecto con `swift package init --type executable` y *sin* `.xcodeproj`. Si queréis usar Xcode, abrid directamente la carpeta del paquete o su `Package.swift`.
+* Si ya os ha pasado, borrad la carpeta `.build` del proyecto y volved a abrirlo.
+* Añadid `.build/` al `.gitignore`.
+====
+
+=== Primera ventana con SwiftCrossUI
 
 [source,swift]
 ----
-struct TaskListView: View {  <1>
-    @StateObject var viewModel = TaskListViewModel()  <2>
+import SwiftCrossUI
+import DefaultBackend
 
-    var body: some View {  <3>
-        NavigationView {  <4>
-            List(viewModel.tasks) { task in  <5>
-                TaskRowView(task: task)  <6>
-            }
-            .navigationTitle("TaskApp Pro")  <7>
+@main
+struct TaskApp: App {
+    var body: some Scene {
+        WindowGroup("TaskApp") {
+            Text("Hola desde SwiftCrossUI")
+                .padding()
         }
     }
 }
 ----
-<1> **struct TaskListView: View**: Define una vista de SwiftUI que conforma al protocolo `View`.
-<2> **@StateObject**: Anotación para objetos observables que persisten durante la vida de la vista; crea una instancia del ViewModel.
-<3> **var body: some View**: Propiedad requerida que define el contenido de la vista.
-<4> **NavigationView**: Contenedor que proporciona navegación jerárquica en iOS, permitiendo push/pop de vistas.
-<5> **List(viewModel.tasks)**: Crea una lista scrollable con los elementos del array `tasks`.
-<6> **{ task in TaskRowView(task: task) }**: Closure que define cómo renderizar cada elemento de la lista.
-<7> **.navigationTitle("TaskApp Pro")**: Establece el título en la barra de navegación.
 
-=== Paso 5: Vista de Fila con Variabilidad
-Creamos la vista para cada fila, aplicando feature flags para mostrar/ocultar elementos.
+[source,shell]
+----
+swift run
+----
+
+Si se abre una ventana con el texto, la instalación es correcta. Sobre `TaskApp` el código es casi igual que con SwiftUI: cambian los `import`, y el resto de la vista es el mismo.
+
+== Un proyecto, varios productos
+
+Queremos que el código de la aplicación no cambie y que solo cambie el *framework* con el que se compila. Para ello separamos el proyecto en tres módulos.
+
+[plantuml]
+----
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam roundCorner 5
+left to right direction
+
+rectangle "TaskApp\n(ejecutable)" as App
+rectangle "TaskUI\n(fachada de interfaz)" as UI
+rectangle "TaskCore\n(modelo y ViewModel)" as Core
+rectangle "SwiftUI" as SUI
+rectangle "SwiftCrossUI +\nDefaultBackend" as SCUI
+
+App --> UI
+App --> Core
+UI ..> SUI : trait SwiftUI
+UI ..> SCUI : trait SwiftCrossUI
+@enduml
+----
+
+[listing]
+----
+TaskApp/
+├── 📄 Package.swift
+└── 📁 Sources/
+    ├── 📁 TaskCore/
+    │   └── 📄 ...                  // Model y ViewModel: Swift puro, sin interfaz
+    ├── 📁 TaskUI/
+    │   └── 📄 TaskUI.swift         // Reexporta el framework de interfaz elegido
+    └── 📁 TaskApp/
+        └── 📄 TaskApp.swift        // @main y vistas
+----
+
+* *TaskCore:* el *Model* y el *ViewModel* de la sesión 3. No importa ningún framework de interfaz, solo `Foundation` y `Observation`.
+* *TaskUI:* un módulo casi vacío que decide qué framework de interfaz recibe la aplicación.
+* *TaskApp:* el ejecutable con el `@main` y las vistas. Solo importa `TaskUI` y `TaskCore`.
+
+=== Los productos con traits
+
+Un *trait* es una opción que se activa al compilar el paquete (SwiftPM 6.1 o superior). Cada trait que declaramos es una variante del producto:
 
 [source,swift]
 ----
-struct TaskRowView: View {  <1>
-    let task: Task  <2>
+// swift-tools-version: 6.1
+import PackageDescription
+
+let package = Package(
+    name: "TaskApp",
+    platforms: [.macOS(.v14), .iOS(.v17)],
+    products: [
+        .executable(name: "TaskApp", targets: ["TaskApp"]),
+    ],
+    traits: [
+        .trait(name: "SwiftUI", description: "Producto con SwiftUI (solo Apple)"),
+        .trait(name: "SwiftCrossUI", description: "Producto con SwiftCrossUI"),
+        .default(enabledTraits: ["SwiftUI"]),
+    ],
+    dependencies: [
+        .package(
+            url: "https://github.com/moreSwift/swift-cross-ui.git",
+            .upToNextMinor(from: "0.10.0")
+        ),
+    ],
+    targets: [
+        .target(name: "TaskCore"),
+        .target(
+            name: "TaskUI",
+            dependencies: [
+                .product(
+                    name: "SwiftCrossUI",
+                    package: "swift-cross-ui",
+                    condition: .when(traits: ["SwiftCrossUI"])
+                ),
+                .product(
+                    name: "DefaultBackend",
+                    package: "swift-cross-ui",
+                    condition: .when(traits: ["SwiftCrossUI"])
+                ),
+            ]
+        ),
+        .executableTarget(
+            name: "TaskApp",
+            dependencies: ["TaskCore", "TaskUI"]
+        ),
+    ]
+)
+----
+
+* `traits:` declara las variantes. `.default(enabledTraits:)` indica cuál se usa si no se elige ninguna.
+* `condition: .when(traits: [...])` hace que SwiftCrossUI solo se *descargue y compile* cuando el trait `SwiftCrossUI` está activo.
+* Dentro del código del paquete, cada trait activo es una condición de compilación con su nombre: `#if SwiftCrossUI`.
+
+[source,shell]
+----
+swift run                           # producto SwiftUI (por defecto)
+swift run --traits SwiftCrossUI     # producto SwiftCrossUI
+----
+
+[IMPORTANT]
+====
+Los traits son *aditivos*: SwiftPM no impide activar `SwiftUI` y `SwiftCrossUI` a la vez. En `TaskUI` se resuelve poniendo `SwiftCrossUI` primero en el `#if`, y SwiftUI solo existe en plataformas Apple. Para elegir el producto usad siempre `--traits` en la terminal.
+====
+
+=== El módulo TaskUI con `@_exported`
+
+`TaskUI` contiene un único fichero. `@_exported import` hace que quien importe `TaskUI` reciba también el framework reexportado, como si lo hubiera importado directamente:
+
+[source,swift]
+----
+#if SwiftCrossUI
+@_exported import SwiftCrossUI
+@_exported import DefaultBackend
+#elseif SwiftUI
+@_exported import SwiftUI
+#else
+#error("Activa un trait de interfaz: SwiftUI o SwiftCrossUI")
+#endif
+----
+
+Así, en la aplicación basta con `import TaskUI`:
+
+[source,swift]
+----
+import TaskUI
+import TaskCore
+
+@main
+struct TaskApp: App {
+    var body: some Scene {
+        WindowGroup("TaskApp") {
+            TaskListView()
+        }
+    }
+}
+
+struct TaskListView: View {
+    @State var viewModel = TaskListViewModel()
 
     var body: some View {
-        HStack {  <3>
-            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")  <4>
-            VStack(alignment: .leading) {  <5>
-                Text(task.title)  <6>
-                    .strikethrough(task.isCompleted)  <7>
-                if AppConfig.showDueDates, let dueDate = task.dueDate {  <8>
-                    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")  <9>
-                        .font(.caption)  <10>
-                        .foregroundColor(.secondary)  <11>
+        VStack {
+            ForEach(viewModel.tasks) { task in
+                HStack {
+                    Button(task.isCompleted ? "✓" : "○") {
+                        viewModel.toggleCompletion(id: task.id)
+                    }
+                    Text(task.title)
                 }
-                if AppConfig.showPriorities, let priority = task.priority {  <12>
-                    Text("Prioridad: \(priority.rawValue)")  <13>
+            }
+            Button("Añadir tarea") {
+                viewModel.addTask()
+            }
+        }
+        .padding()
+    }
+}
+----
+
+El *mismo fichero* se compila con SwiftUI o con SwiftCrossUI, según el trait. El ViewModel es el `@Observable` de `TaskCore`, el de la sesión 3, sin cambios.
+
+[NOTE]
+====
+`@_exported` es un atributo con guion bajo: funciona y se usa mucho, pero no es parte estable del lenguaje. Por eso lo aislamos en un único fichero.
+====
+
+== Cuando SwiftCrossUI no soporta algo: una vista por versión
+
+Compartir el código tiene un límite: solo vale para lo que *existe en los dos frameworks con la misma forma*. Partimos de la fila de tarea del curso anterior, escrita para SwiftUI:
+
+[source,swift]
+----
+HStack {
+    Button(action: toggleCompletion) {
+        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+    }
+    .buttonStyle(.plain)
+    VStack(alignment: .leading) {
+        Text(task.title)
+            .strikethrough(task.isCompleted)
+        if let dueDate = task.dueDate {
+            Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+----
+
+Este código *no compila* con SwiftCrossUI 0.10.0:
+
+[cols="1,2",options="header"]
+|===
+| En SwiftUI | En SwiftCrossUI
+
+| `Image(systemName:)`
+| No existe: `Image` solo se crea desde una URL o desde datos de imagen.
+
+| `.strikethrough(_:)`
+| No existe.
+
+| `Color.secondary`
+| No existe. Sí hay `Color.gray`, `.green`, `.yellow` y `.red`.
+
+| `.font(.caption)`
+| Existe y se escribe igual.
+
+| `.foregroundColor(_:)`, `.italic()`
+| Existen y se escriben igual.
+|===
+
+La regla del proyecto es *no separar versiones con `#if` dentro de las vistas*. Cuando algo no se soporta, se escribe *una vista en cada carpeta de vistas*, con el mismo nombre y *la misma API pública*. La lógica (modelo, ViewModel, flags) se escribe una sola vez en `TaskCore`.
+
+[listing]
+----
+TaskApp/
+├── 📄 Package.swift
+└── 📁 Sources/
+    ├── 📁 TaskCore/               // Model, ViewModel y AppConfig: Swift puro
+    ├── 📁 TaskViewsSwiftUI/       // Vistas de la versión SwiftUI
+    │   └── 📄 TaskRowView.swift
+    ├── 📁 TaskViewsSwiftCrossUI/  // Vistas de la versión SwiftCrossUI
+    │   └── 📄 TaskRowView.swift
+    ├── 📁 TaskUI/                 // Fachada: reexporta el framework y las vistas de la versión
+    └── 📁 TaskApp/                // @main y vistas comunes
+----
+
+*Versión SwiftUI* (`TaskViewsSwiftUI/TaskRowView.swift`), con el código del curso anterior:
+
+[source,swift]
+----
+import SwiftUI
+import TaskCore
+
+public struct TaskRowView: View {
+    let task: Task
+    let toggleCompletion: () -> Void
+
+    public init(task: Task, toggleCompletion: @escaping () -> Void) {
+        self.task = task
+        self.toggleCompletion = toggleCompletion
+    }
+
+    public var body: some View {
+        HStack {
+            Button(action: toggleCompletion) {
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+            }
+            .buttonStyle(.plain)
+            VStack(alignment: .leading) {
+                Text(task.title)
+                    .strikethrough(task.isCompleted)
+                if let dueDate = task.dueDate {
+                    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
                         .font(.caption)
-                        .foregroundColor(priorityColor(for: priority))  <14>
+                        .foregroundColor(.secondary)
+                }
+                if let priority = task.priority {
+                    Text("Prioridad: \(priority.rawValue)")
+                        .font(.caption)
+                        .foregroundColor(priorityColor(for: priority))
                 }
             }
         }
     }
 
-    private func priorityColor(for priority: Priority) -> Color {  <15>
-        switch priority {  <16>
+    private func priorityColor(for priority: Priority) -> Color {
+        switch priority {
         case .low: return .green
         case .medium: return .yellow
         case .high: return .red
@@ -180,227 +429,416 @@ struct TaskRowView: View {  <1>
     }
 }
 ----
-<1> **struct TaskRowView: View**: Vista para representar una sola fila de tarea.
-<2> **let task: Task**: Propiedad inmutable que recibe la tarea a mostrar.
-<3> **HStack**: Contenedor horizontal que alinea elementos lado a lado.
-<4> **Image(systemName: ...)**: Muestra un ícono del sistema SF Symbols basado en el estado de completitud.
-<5> **VStack(alignment: .leading)**: Contenedor vertical que alinea elementos a la izquierda.
-<6> **Text(task.title)**: Muestra el título de la tarea.
-<7> **.strikethrough(task.isCompleted)**: Aplica tachado al texto si la tarea está completada.
-<8> **if AppConfig.showDueDates, let dueDate = task.dueDate**: Condicional que verifica el flag y desempaqueta opcional.
-<9> **dueDate.formatted(...)**: Formatea la fecha para mostrarla de manera legible.
-<10> **.font(.caption)**: Aplica fuente pequeña para texto secundario.
-<11> **.foregroundColor(.secondary)**: Color gris secundario para texto menos prominente.
-<12> **if AppConfig.showPriorities, let priority = task.priority**: Similar, controla visibilidad de prioridad.
-<13> **priority.rawValue**: Convierte el enum a string para mostrar.
-<14> **priorityColor(for: priority)**: Llama a función para determinar color basado en prioridad.
-<15> **private func**: Función privada que calcula el color según la prioridad.
-<16> **switch priority**: Estructura de control que devuelve color diferente por caso.
 
-=== Paso 6: Aplicación del Feature Flag
-Vemos cómo el feature flag `AppConfig.showDueDates` controla la visibilidad de las fechas de vencimiento. Cambiando `true` a `false`, las fechas desaparecen sin recompilar.
+*Versión SwiftCrossUI* (`TaskViewsSwiftCrossUI/TaskRowView.swift`), con lo que sí existe:
 
 [source,swift]
 ----
-// En AppConfig.swift
-static var showDueDates: Bool = false  <1>
+import Foundation
+import SwiftCrossUI
+import TaskCore
 
-// En TaskRowView.swift
-if AppConfig.showDueDates, let dueDate = task.dueDate {  <2>
-    // Este bloque se ejecuta solo si showDueDates es true
-    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
-}
-----
-<1> **Cambio de flag**: Al cambiar a `false`, la condición `if` no se cumple y el texto no se muestra.
-<2> **Condicional con flag**: La coma en Swift permite combinar condiciones; aquí verifica el flag y desempaqueta opcional.
-
-=== Paso 7: Hacer el Ícono Interactivo
-Para marcar tareas como completadas, necesitamos convertir el ícono en un botón interactivo.
-
-[source,swift]
-----
-struct TaskRowView: View {
+public struct TaskRowView: View {
     let task: Task
-    let toggleCompletion: () -> Void  <1>
+    let toggleCompletion: () -> Void
 
-    var body: some View {
+    public init(task: Task, toggleCompletion: @escaping () -> Void) {
+        self.task = task
+        self.toggleCompletion = toggleCompletion
+    }
+
+    public var body: some View {
         HStack {
-            Button(action: toggleCompletion) {  <2>
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")  <3>
-                    .foregroundColor(task.isCompleted ? .green : .gray)  <4>
+            // sin Image(systemName:): un carácter en un botón
+            Button(task.isCompleted ? "●" : "○") {
+                toggleCompletion()
             }
-            .buttonStyle(.plain)  <5>
-            // ... resto del código ...
+            VStack(alignment: .leading) {
+                // sin .strikethrough: gris y cursiva
+                if task.isCompleted {
+                    Text(task.title)
+                        .foregroundColor(.gray)
+                        .italic()
+                } else {
+                    Text(task.title)
+                }
+                if let dueDate = task.dueDate {
+                    Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundColor(.gray)   // sin Color.secondary
+                }
+                if let priority = task.priority {
+                    Text("Prioridad: \(priority.rawValue)")
+                        .font(.caption)
+                        .foregroundColor(priorityColor(for: priority))
+                }
+            }
+        }
+    }
+
+    private func priorityColor(for priority: Priority) -> Color {
+        switch priority {
+        case .low: return .green
+        case .medium: return .yellow
+        case .high: return .red
         }
     }
 }
 ----
-<1> **let toggleCompletion: () -> Void**: Closure que se ejecutará cuando se presione el botón.
-<2> **Button(action: toggleCompletion)**: Envuelve el ícono en un Button con la acción especificada.
-<3> **Image(systemName: ...)**: El ícono cambia basado en el estado de completitud.
-<4> **.foregroundColor(...)**: Color verde para completadas, gris para pendientes.
-<5> **.buttonStyle(.plain)**: Estilo plano para que no se vea como un botón tradicional.
 
-=== Paso 8: Actualizar el ViewModel
-Necesitamos una función en el ViewModel para alternar el estado de completitud de una tarea.
+En `Package.swift` cada carpeta es un target y la fachada solo depende del de su trait:
 
 [source,swift]
 ----
-class TaskListViewModel: ObservableObject {
-    @Published var tasks: [Task] = [
-        Task(title: "Comprar leche", dueDate: Date().addingTimeInterval(86400)),
-        Task(title: "Hacer ejercicio", priority: .high),
-        Task(title: "Llamar a mamá")
+.target(name: "TaskViewsSwiftUI", dependencies: ["TaskCore"]),
+.target(
+    name: "TaskViewsSwiftCrossUI",
+    dependencies: [
+        "TaskCore",
+        .product(name: "SwiftCrossUI", package: "swift-cross-ui",
+                 condition: .when(traits: ["SwiftCrossUI"])),
+        .product(name: "DefaultBackend", package: "swift-cross-ui",
+                 condition: .when(traits: ["SwiftCrossUI"])),
     ]
+),
+.target(
+    name: "TaskUI",
+    dependencies: [
+        .target(name: "TaskViewsSwiftUI", condition: .when(traits: ["SwiftUI"])),
+        .target(name: "TaskViewsSwiftCrossUI", condition: .when(traits: ["SwiftCrossUI"])),
+        // ... y los productos de SwiftCrossUI condicionados a su trait
+    ]
+),
+----
 
-    func toggleTaskCompletion(_ task: Task) {  <1>
-        if let index = tasks.firstIndex(where: { $0.id == task.id }) {  <2>
-            tasks[index].isCompleted.toggle()  <3>
-        }
+Y la fachada `TaskUI` reexporta también las vistas de la versión activa. Es el *único* `#if` entre versiones:
+
+[source,swift]
+----
+#if SwiftCrossUI
+@_exported import SwiftCrossUI
+@_exported import DefaultBackend
+@_exported import TaskViewsSwiftCrossUI
+#elseif SwiftUI
+@_exported import SwiftUI
+@_exported import TaskViewsSwiftUI
+#else
+#error("Activa un trait de interfaz: SwiftUI o SwiftCrossUI")
+#endif
+----
+
+Las vistas comunes ya no saben qué versión se compila. Solo llaman a `TaskRowView` y reciben la de la carpeta activa:
+
+[source,swift]
+----
+ForEach(viewModel.tasks) { task in
+    TaskRowView(task: task) {
+        viewModel.toggleCompletion(id: task.id)
     }
 }
 ----
-<1> **func toggleTaskCompletion(_ task: Task)**: Función que recibe la tarea a modificar.
-<2> **firstIndex(where: { $0.id == task.id })**: Encuentra el índice de la tarea por su ID único.
-<3> **tasks[index].isCompleted.toggle()**: Invierte el valor booleano de isCompleted.
 
-=== Paso 9: Conectar la Vista con el ViewModel
-Actualizamos TaskListView para pasar la función de alternancia a cada TaskRowView.
+[IMPORTANT]
+====
+Con carpetas de vistas por versión, `swift build` a secas compila *todos* los targets, incluida la carpeta de la otra versión, y falla. Para compilar usad `swift build --product TaskApp`; `swift run` ya compila solo lo necesario.
+====
+
+Otras diferencias que conviene conocer: en SwiftCrossUI no hay `NavigationView` (existe `NavigationStack`), `List` exige siempre un `Binding` de selección y no existen `Form` ni `.navigationTitle`. La apariencia depende además del backend (AppKit o GTK4): no se espera igualdad visual.
+
+== Feature flags: variabilidad en ejecución y en compilación
+
+Un *feature flag* es una configuración que determina si una característica está activa en un producto.
+
+[cols="1,3",options="header"]
+|===
+| Situación | Resultado
+
+| `showDueDates = false`
+| TaskApp sigue funcionando, pero no muestra la fecha de vencimiento.
+
+| `showDueDates = true`
+| Las tareas con fecha muestran ese dato adicional.
+
+| `enableProgress = false`
+| BookApp mantiene su biblioteca sin mostrar la información de páginas.
+
+| `enableProgress = true`
+| La variante de BookApp puede mostrar datos de avance para los libros que los tengan.
+|===
+
+Hay dos técnicas, y se diferencian en *cuándo se decide*:
+
+[cols="1,2,2",options="header"]
+|===
+| | Variabilidad en ejecución | Variabilidad en compilación
+
+| Cuándo se decide
+| Con la aplicación funcionando.
+| Antes de compilar.
+
+| Cómo se escribe
+| Un valor observable (`AppConfig`) que la vista consulta con un `if`.
+| Una condición de compilación y un `#if`.
+
+| Para cambiarla
+| Se cambia el valor; la View se actualiza *sin recompilar*.
+| Hay que *recompilar* el producto.
+
+| Qué pasa con el código desactivado
+| Sigue dentro del programa.
+| No existe en el programa.
+|===
+
+=== Feature flags en ejecución: AppConfig
+
+La configuración pertenece a la aplicación, *no* al modelo de datos. Es una clase `@Observable` más, en `TaskCore`:
+
+[source,swift]
+----
+import Observation
+
+@Observable
+public final class AppConfig {
+    public var showDueDates = true
+    public var showPriorities = true
+    public init() {}
+}
+----
+
+El modelo `Task` es el de la sesión 3, con `dueDate` y `priority` opcionales. La pantalla principal guarda el `AppConfig` en un `@State`, igual que el ViewModel, y ofrece dos botones para cambiar los flags:
 
 [source,swift]
 ----
 struct TaskListView: View {
-    @StateObject var viewModel = TaskListViewModel()
+    @State var viewModel = TaskListViewModel()
+    @State var config = AppConfig()
 
     var body: some View {
-        NavigationView {
-            List(viewModel.tasks) { task in
-                TaskRowView(task: task, toggleCompletion: {  <1>
-                    viewModel.toggleTaskCompletion(task)  <2>
-                })
+        VStack {
+            HStack {
+                Button("Fechas: \(config.showDueDates ? "Sí" : "No")") {
+                    config.showDueDates.toggle()
+                }
+                Button("Prioridades: \(config.showPriorities ? "Sí" : "No")") {
+                    config.showPriorities.toggle()
+                }
             }
-            .navigationTitle("TaskApp Pro")
+            ForEach(viewModel.tasks) { task in
+                TaskRowView(
+                    task: task,
+                    showDueDates: config.showDueDates,
+                    showPriorities: config.showPriorities,
+                    toggleCompletion: { viewModel.toggleCompletion(id: task.id) }
+                )
+            }
+            Button("Añadir tarea") { viewModel.addTask() }
+        }
+        .padding()
+    }
+}
+----
+
+Las dos filas (la de cada carpeta de vistas) reciben ahora los flags y la acción como *closure*, y siguen sin conocer el ViewModel. En la versión SwiftUI:
+
+[source,swift]
+----
+public struct TaskRowView: View {
+    let task: Task
+    let showDueDates: Bool
+    let showPriorities: Bool
+    let toggleCompletion: () -> Void
+
+    public init(
+        task: Task,
+        showDueDates: Bool,
+        showPriorities: Bool,
+        toggleCompletion: @escaping () -> Void
+    ) {
+        self.task = task
+        self.showDueDates = showDueDates
+        self.showPriorities = showPriorities
+        self.toggleCompletion = toggleCompletion
+    }
+
+    public var body: some View {
+        // ...
+        if showDueDates, let dueDate = task.dueDate {
+            // fecha
+        }
+        if showPriorities, let priority = task.priority {
+            // prioridad
         }
     }
 }
 ----
-<1> **toggleCompletion: { ... }**: Aquí estamos creando una **closure** (función anónima) que encapsula la lógica para alternar el estado de completitud. Esta closure se pasa como parámetro a TaskRowView.
-<2> **viewModel.toggleTaskCompletion(task)**: Dentro de la closure, llamamos al método del ViewModel, pasando la tarea específica que queremos modificar. La closure "captura" tanto el `viewModel` como la `task` del contexto donde se define.
 
-==== ¿Cómo Funciona Este Patrón? 🤔
+La versión de SwiftCrossUI recibe exactamente los mismos parámetros y tiene las mismas condiciones.
 
-Este código implementa un patrón fundamental en SwiftUI llamado **"closure como callback"**. Vamos a desglosarlo:
+Las condiciones `if showDueDates` y `if showPriorities` son *puntos de variación visibles*. Cambiar un flag muestra u oculta información sin borrar los datos de las tareas.
 
-===== 1. La Closure se Define en TaskListView
+*Pregunta:* ¿es lo mismo que la fecha sea `nil` a que la feature esté desactivada? No: el primer caso es el dato de una tarea y el segundo la configuración del producto.
+
+=== Variables de compilación
+
+Una *variable de compilación* (_compilation condition_) es un nombre que se activa al compilar. Desde el código se consulta con `#if`; si no está activa, el compilador *no incluye* ese bloque:
+
 [source,swift]
 ----
-TaskRowView(task: task, toggleCompletion: {  <1>
-    viewModel.toggleTaskCompletion(task)  <2>
-})
-----
-<1> **Creación de closure**: `{ viewModel.toggleTaskCompletion(task) }` es una función anónima que no se ejecuta inmediatamente, sino que se "guarda" para usar después.
-<2> **Captura de variables**: La closure captura referencias al `viewModel` (del scope de TaskListView) y a la `task` específica de esta iteración del bucle.
-
-===== 2. La Closure se Almacena en TaskRowView
-[source,swift]
-----
-struct TaskRowView: View {
-    let task: Task
-    let toggleCompletion: () -> Void  <1>
-    // ...
+#if Prioridades
+if showPriorities, let priority = task.priority {
+    Text("Prioridad: \(priority.rawValue)")
 }
+#endif
 ----
-<1> **Parámetro de función**: `toggleCompletion` es una propiedad que almacena la closure. Su tipo `() -> Void` significa "función que no recibe parámetros y no devuelve nada".
 
-===== 3. La Closure se Ejecuta en el Button
-[source,swift]
-----
-Button(action: toggleCompletion) {  <1>
-    // UI del botón
-}
-----
-<1> **Ejecución diferida**: Cuando el usuario toca el botón, SwiftUI ejecuta la closure almacenada en `toggleCompletion`, que a su vez llama a `viewModel.toggleTaskCompletion(task)`.
+Hay varias formas de definirla:
 
-===== 4. El Flujo Completo
-1. **Creación**: En `TaskListView`, se crea una closure que "recuerda" qué `viewModel` y qué `task` usar.
-2. **Paso**: La closure se pasa a `TaskRowView` como parámetro.
-3. **Almacenamiento**: `TaskRowView` guarda la closure en su propiedad `toggleCompletion`.
-4. **Ejecución**: Cuando se toca el botón, la closure se ejecuta, modificando el estado a través del ViewModel.
-5. **Actualización**: `@Published` notifica a SwiftUI, que redibuja la UI automáticamente.
+[cols="2,3,3",options="header"]
+|===
+| Dónde | Cómo | Ejemplo
 
-===== ¿Por Qué Este Patrón?
-- **Separación de responsabilidades**: La vista (`TaskRowView`) no sabe cómo modificar el estado, solo sabe que debe llamar a `toggleCompletion`.
-- **Reutilización**: `TaskRowView` puede usarse con diferentes ViewModels o lógicas.
-- **Testabilidad**: Podemos probar la lógica del ViewModel independientemente de la UI.
-- **Reactividad**: SwiftUI actualiza automáticamente la UI cuando cambia el estado observado.
+| *Trait* del paquete
+| Cada trait activo es una variable con su nombre.
+| `swift run --traits Prioridades`
 
-=== Paso 10: Hacer Task Mutable
-Para que el cambio se propague correctamente, necesitamos que Task sea una struct mutable.
+| *`Package.swift`*
+| `swiftSettings` del target, con `.define`. Se puede limitar a una configuración.
+| `.define("Prioridades", .when(configuration: .debug))`
 
-[source,swift]
-----
-struct Task {
-    let id: UUID = UUID()
-    var title: String  <1>
-    var isCompleted: Bool = false  <2>
-    var dueDate: Date?
-    var priority: Priority?
+| *Línea de comandos*
+| Se pasa la opción `-D` al compilador.
+| `swift run -Xswiftc -DPrioridades`
 
-    // Para identificar tareas en List necesitamos Identifiable
-    // Pero como Task ya tiene id único, podemos hacer que conforme al protocolo
-}
-----
-<1> **var title: String**: Ya es var, correcto.
-<2> **var isCompleted: Bool**: Ya es var, correcto.
+| *Xcode*
+| Ajuste *Active Compilation Conditions* del target, por configuración.
+| `SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG Prioridades`
 
-=== Paso 11: Conformar a Identifiable
-Para usar Task en List, necesitamos que conforme al protocolo Identifiable.
+| *Automática*
+| Swift define `DEBUG` en las compilaciones de depuración de SwiftPM y de Xcode.
+| `#if DEBUG`
+|===
+
+[NOTE]
+====
+Todas las formas producen el mismo efecto: la variable llega al `#if`. Las definidas solo para la configuración `debug` (y la propia `DEBUG`) desaparecen al compilar con `swift run -c release`.
+====
+
+==== Una característica con trait
+
+Para que `Prioridades` sea una característica que *pueda no existir* en un producto, la declaramos como trait en el `Package.swift`:
 
 [source,swift]
 ----
-struct Task: Identifiable {  <1>
-    let id: UUID = UUID()  <2>
-    var title: String
-    var isCompleted: Bool = false
-    var dueDate: Date?
-    var priority: Priority?
-}
+traits: [
+    .trait(name: "SwiftUI", description: "Producto con SwiftUI (solo Apple)"),
+    .trait(name: "SwiftCrossUI", description: "Producto con SwiftCrossUI"),
+    .trait(name: "Prioridades", description: "Característica opcional: prioridad de la tarea"),
+    .default(enabledTraits: ["SwiftUI"]),
+],
 ----
-<1> **Identifiable**: Protocolo que requiere una propiedad `id` única.
-<2> **let id: UUID**: Propiedad inmutable que identifica cada tarea de forma única.
 
-== Práctica: Construye la UI de "HabitApp" con Feature Flags 👩‍💻👨‍💻
+Ahora un producto se define por la *combinación* de traits:
 
-En esta práctica aplicarás los conceptos de construcción de UI con SwiftUI y el uso de feature flags para implementar variabilidad en tiempo de ejecución. Utilizarás el diagrama de características de HabitApp que diseñaste en la sesión anterior.
+[source,shell]
+----
+swift run                                          # SwiftUI, sin prioridades
+swift run --traits SwiftUI,Prioridades             # SwiftUI con prioridades
+swift run --traits SwiftCrossUI,Prioridades        # SwiftCrossUI con prioridades
+----
 
-.Actividad: Construcción de UI Base con Feature Flags (1h 45m)
-****
+El `#if Prioridades` está dentro de *cada* fila por versión: selecciona una *característica*, no un framework, y por eso no incumple la regla de no usar `#if` para separar versiones.
 
-- **Crea** tu `AppConfig.swift` con feature flags para las características opcionales de tu diagrama.
-- **Implementa** el ViewModel para gestionar la lista de hábitos.
-- **Construye** la vista principal con `List` para mostrar los hábitos.
-- **Crea** la vista de fila (`HabitRowView`) aplicando feature flags para mostrar/ocultar elementos opcionales.
-- **Prueba** cambiando los valores de los flags y observa cómo cambia la UI.
+[IMPORTANT]
+====
+`--traits` *reemplaza* a los traits por defecto, no se suma a ellos. Con `swift run --traits Prioridades` el trait `SwiftUI` deja de estar activo y `TaskUI` falla con su `#error`. Hay que listar todos los traits del producto.
+====
 
-**Entregable**
+Así conviven dos niveles de variabilidad: el trait `Prioridades` decide si el código *existe*, y el flag `showPriorities` decide, en una variante que sí lo incluye, si se *muestra*.
 
-- Un Playground o proyecto Xcode con la UI funcional de "HabitApp".
-- Capturas de pantalla mostrando la UI con diferentes configuraciones de feature flags.
-- Sube el código al repositorio Git de tu grupo.
+=== Schemes en Xcode
 
-****
-****
+Un *scheme* es una configuración guardada de Xcode que define *qué* se construye y se ejecuta y *con qué opciones*: el target, la configuración de compilación (Debug, Release u otra), los argumentos y las variables de entorno. Cada scheme es una forma de lanzar el producto.
 
-- **Crea** tu `AppConfig.swift` con feature flags para las características opcionales de tu diagrama.
-- **Implementa** el ViewModel para gestionar la lista de hábitos.
-- **Construye** la vista principal con `List` para mostrar los hábitos.
-- **Crea** la vista de fila (`HabitRowView`) aplicando feature flags para mostrar/ocultar elementos opcionales.
-- **Prueba** cambiando los valores de los flags y observa cómo cambia la UI.
+Para tener varias variantes en Xcode:
 
-**Entregable**
+. *Crear configuraciones.* En el proyecto, pestaña *Info*, sección *Configurations*, duplicad *Debug* con el nombre, por ejemplo, `Debug-Prioridades`.
+. *Definir la variable.* En *Build Settings* del target, buscad *Active Compilation Conditions* y añadid `Prioridades` solo a la configuración nueva.
+. *Crear un scheme* (*Product > Scheme > Manage Schemes*) llamado `TaskApp-Prioridades` y, en *Edit Scheme > Run > Info*, elegid como *Build Configuration* la configuración nueva.
 
-- Un Playground o proyecto Xcode con la UI funcional de "HabitApp".
-- Capturas de pantalla mostrando la UI con diferentes configuraciones de feature flags.
-- Sube el código al repositorio Git de tu grupo.
+Desde el menú de schemes se elige entonces la variante antes de ejecutar. El equivalente por terminal es:
 
-****
+[source,shell]
+----
+xcodebuild -scheme TaskApp -destination 'platform=macOS' \
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) Prioridades' build
+----
+
+[NOTE]
+====
+`xcodebuild` no tiene ninguna opción para elegir traits. Por eso en esta sesión *los traits se eligen siempre con `swift run --traits ...`* en la terminal, y los schemes se usan para las variables de compilación.
+====
+
+== Actividad: BookApp con dos productos
+
+Montad el proyecto de *BookApp* con la misma estructura que acabamos de ver con TaskApp, escribid una vista propia de cada versión donde haga falta y usad los feature flags para la primera característica común, *F1: Progreso*. Se parte del listado de libros de la sesión 3.
+
+=== Qué hay que hacer
+
+. *Crear el paquete* de BookApp con un núcleo (`BookCore`), una carpeta de vistas por versión (`BookViewsSwiftUI` y `BookViewsSwiftCrossUI`), una fachada de interfaz (`BookUI`) y el ejecutable (`BookApp`).
+. *Mover* a `BookCore` el estado de lectura, el libro y el ViewModel del listado. Recordad que, para usarlos desde otro módulo, los tipos y sus inicializadores deben ser `public`.
+. *Declarar los traits* `SwiftUI` y `SwiftCrossUI`, con SwiftUI como valor por defecto, y añadir la dependencia de SwiftCrossUI 0.10.0 solo para el trait que corresponde.
+. *Escribir la fachada de interfaz* con `@_exported`, de modo que reexporte el framework y las vistas de la versión activa.
+. *Escribir el listado* en el ejecutable, importando solo la fachada y el núcleo, y *la fila del libro en cada carpeta de vistas*: la de SwiftUI con un icono del sistema para el estado de lectura y la de SwiftCrossUI con lo que sí soporta. Las dos filas tienen el mismo nombre y la misma API pública.
+. *Ejecutar los dos productos* y comprobar que muestran el mismo listado.
+. *Declarar los cinco flags comunes* (F1–F5) en una configuración observable del núcleo, todos desactivados.
+. *Implementar F1* como componente independiente: sus datos (libro, total de páginas y página actual) y su ViewModel *no* pueden ir dentro del libro ni del ViewModel del listado. La vista solo muestra el progreso si el flag de F1 está activo.
+. *Hacer F1 variable en compilación* con un trait propio y un `#if`, y comprobar que sin ese trait el código de F1 no se compila.
+. *Crear una variante en Xcode* con su propia configuración, variable de compilación y scheme, o, si no usáis Xcode, la orden equivalente por terminal.
+
+=== Comprobad vuestro diseño
+
+* ¿Qué módulos importan SwiftUI o SwiftCrossUI y cuáles no? ¿Por qué el núcleo no debe hacerlo?
+* ¿Qué pasa si compiláis con el trait de SwiftCrossUI: se descarga SwiftUI? ¿Y al revés?
+* ¿Qué vista tuvisteis que escribir dos veces y qué es lo que SwiftCrossUI no soportaba? ¿Por qué no se resuelve con un `#if` dentro de la vista?
+* ¿En qué se parece un trait a un feature flag y en qué se diferencia? (Pensad en *cuándo* se decide cada uno.)
+* Con F1 desactivada, ¿siguen funcionando la biblioteca y los datos del libro? ¿Y con F1 sin compilar?
+* ¿Dónde viven los datos de progreso y por qué no en el libro?
+
+== Entregable y criterios de revisión
+
+Cada grupo debe subir a su repositorio:
+
+* El paquete de BookApp con el núcleo, las dos carpetas de vistas, la fachada y su `Package.swift` con los traits.
+* La configuración con F1–F5 declaradas y F1 conectada, como flag y como trait.
+* El fichero `Package.resolved`.
+* Dos capturas del *mismo proyecto*: una ejecutada con SwiftUI y otra con SwiftCrossUI.
+* Dos capturas de BookApp: una con F1 desactivada y otra con F1 activada y progreso visible.
+* Un párrafo explicando qué se comparte entre los dos productos, qué es distinto y cómo se separan el Core y F1.
+
+[cols="1,3",options="header"]
+|===
+| Qué se evalúa | Qué debéis demostrar
+
+| *Instalación*
+| SwiftCrossUI 0.10.0 se resuelve y compila desde `Package.swift`.
+
+| *Estructura*
+| El núcleo no importa ningún framework de interfaz.
+
+| *Productos*
+| `swift run` y `swift run --traits SwiftCrossUI` arrancan cada uno su variante.
+
+| *Código común y vistas por versión*
+| La lógica y el listado se escriben una vez; la fila tiene una versión en cada carpeta de vistas, con la misma API y sin `#if` entre versiones.
+
+| *Feature flags*
+| Activar y desactivar F1 no rompe ni elimina el Core. F1 existe como flag y como trait.
+
+| *Trabajo común*
+| Los seis grupos parten del mismo listado de libros.
+|===
+
+[IMPORTANT]
+====
+En esta sesión *no* se exige implementar F2–F5, las características originales, plugins ni persistencia. El objetivo es dejar el proyecto preparado para añadirlas en las próximas sesiones: lógica común, vistas por versión, dos productos y el primer feature flag funcionando.
+====

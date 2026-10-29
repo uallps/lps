@@ -1,0 +1,159 @@
+= BookApp: núcleo común y modelo de variabilidad
+:revdate: 2026-10-22
+
+Este documento fija el alcance compartido de BookApp para la asignatura de Líneas de Productos Software (curso 2026-2027). Se ha elaborado después del brainstorming de los grupos MarkUp, inkd, BiblioGo, Lexi, ReadIT y Netanbook.
+
+*Acuerdo docente:* todos los grupos parten del mismo producto, implementan un núcleo común y las mismas cinco características variables. Además, cada integrante propone e implementa una característica original. No se pide desarrollar todas las ideas del brainstorming.
+
+== Principio de partida: el mismo producto para todos
+
+BookApp es una biblioteca personal de libros con seguimiento de lectura. La *primera versión* de cada grupo debe representar el mismo producto y tener las mismas operaciones básicas. Las diferencias entre equipos se introducirán *después* mediante características originales.
+
+La palabra «opcional» describe si una característica aparece en una *variante del producto*, no si el equipo tiene que programarla.
+
+* *Core:* obligatorio en todos los productos y en todas las entregas.
+* *Cinco features comunes:* obligatorias de *implementar* por todos los equipos; opcionales al configurar cada producto.
+* *Features originales:* una por integrante (cinco en un grupo de cinco); obligatorias de *implementar* y opcionales al configurar cada producto.
+
+En un equipo de cinco integrantes se desarrollarán, por tanto, *diez características variables*: cinco comunes y cinco originales. Cada integrante será responsable principal de una común y una original, sin dejar de compartir la responsabilidad del núcleo y la integración.
+
+== 1. Núcleo obligatorio (Core)
+
+=== Datos mínimos del libro
+
+* Identificador único y estable.
+* Título no vacío (obligatorio).
+* Autor (opcional).
+* Estado de lectura: *Pendiente*, *Leyendo* o *Terminado*.
+
+=== Operaciones obligatorias
+
+* Añadir un libro manualmente.
+* Mostrar la biblioteca y consultar la información de un libro.
+* Editar el libro y cambiar su estado de lectura.
+* Eliminar un libro.
+* Guardar y recuperar la biblioteca en almacenamiento local (la tecnología se fijará antes de implementar esta fase).
+
+El Core no depende de red, cuentas de usuario, catálogos externos ni de ninguna de las features variables. Debe poder ejecutarse por sí solo.
+
+== 2. Las cinco características variables comunes
+
+[cols="1,2,3",options="header"]
+|===
+| Feature | Datos mínimos | Comportamiento mínimo
+
+| *F1 — Progreso*
+| Total de páginas y página actual.
+| Registrar y actualizar la página actual; mostrar porcentaje leído cuando exista un total válido.
+
+| *F2 — Notas y citas*
+| Texto y libro al que pertenece cada anotación.
+| Crear, listar, editar y eliminar notas o citas personales asociadas a un libro.
+
+| *F3 — Categorías*
+| Nombre de categoría y su asociación con libros.
+| Crear categorías, asignar/desasignar libros y filtrar la biblioteca por categoría.
+
+| *F4 — Valoraciones y reseñas*
+| Puntuación de 1 a 5 estrellas y texto breve.
+| Registrar, modificar y consultar una valoración y reseña de un libro.
+
+| *F5 — Estadísticas*
+| Datos derivados de los libros y sus estados.
+| Mostrar al menos el total de libros y el número de pendientes, leyendo y terminados.
+|===
+
+*Acotación:* F2 son anotaciones personales (incluidas durante la lectura); F4 es una valoración global del libro. F5 se puede calcular usando exclusivamente el Core, sin exigir F1.
+
+Cada feature tendrá un punto de activación/desactivación. La aplicación seguirá siendo utilizable cuando alguna se desactive. La forma concreta de implementar la variabilidad (feature flags, plugins o compilación condicional) se trabajará progresivamente en las sesiones correspondientes.
+
+== 3. Características originales por integrante
+
+* Cada integrante diseña, documenta e implementa *una característica propia*.
+* Las características originales de un mismo grupo deben ser diferentes entre sí y no limitarse a renombrar F1-F5.
+* Deben integrarse con el mismo Core, poder excluirse de variantes que no las seleccionen y tener un responsable claramente identificado.
+* No es obligatorio que los seis grupos elijan las mismas features originales.
+
+Ideas que surgieron en el brainstorming (no son requisitos comunes): escáner ISBN, búsqueda en un catálogo externo, gestión de sagas, relecturas, abandonos (DNF), temporizador, préstamos, recomendador, ruleta de próximas lecturas, protección de spoilers, importación/exportación, feed social y gamificación.
+
+== 4. Modelo inicial de características
+
+[listing]
+----
+BookApp [obligatoria]
+  Core [obligatorio]
+    ID, título, autor opcional, estado
+    CRUD de libros, consulta, persistencia local
+  Progreso [opcional: implementación exigida a todos]
+  NotasYCitas [opcional: implementación exigida a todos]
+  Categorias [opcional: implementación exigida a todos]
+  ValoracionesYResenas [opcional: implementación exigida a todos]
+  Estadisticas [opcional: implementación exigida a todos]
+  Original1 [opcional: implementación exigida a cada integrante]
+  Original2 [opcional]
+  Original3 [opcional]
+  Original4 [opcional]
+  Original5 [opcional]
+----
+
+Cada una de las diez features variables se puede modelar como hija opcional independiente de BookApp. *No* se exige un grupo OR que fuerce la selección de al menos una: queremos poder obtener una variante Base que contenga únicamente el Core.
+
+Las restricciones de dominio concretas se introducirán cuando existan dependencias reales. Por ejemplo, calcular un porcentaje de progreso requiere conocer el total de páginas, que será un dato de F1; no requiere activar otra feature.
+
+== 5. Variantes que debe admitir la arquitectura
+
+[cols="1,3",options="header"]
+|===
+| Variante | Selección
+
+| *Base*
+| Solo Core; cero features variables activas.
+
+| *Común*
+| Core + F1, F2, F3, F4 y F5.
+
+| *Personalizada*
+| Core + cualquier subconjunto válido de las diez features.
+
+| *Completa*
+| Core + las cinco comunes + las cinco originales.
+|===
+
+Estas variantes son *configuraciones del mismo producto*, no repositorios que se clonan y modifican por separado. Se podrá concretar más adelante si se implementan mediante flags en ejecución, condiciones de compilación o esquemas de Xcode.
+
+== 6. Persistencia: decisión docente pendiente
+
+La *persistencia local* forma parte del Core y es obligatoria. Para mantener el producto inicial igual entre grupos, todos deberán emplear la *misma solución técnica*, aún por fijar.
+
+* *Opción A:* Core Data clásico o SwiftData como tecnología común obligatoria.
+* *Opción B:* diseñar un protocolo de almacenamiento y dos alternativas (JSON y Core Data/SwiftData) modeladas mediante un XOR.
+
+No se debe presentar el XOR como requisito definitivo mientras no se adopte formalmente la opción B. Tampoco debe confundirse Core Data con SwiftData: son tecnologías/API diferentes, aunque ambas permiten persistencia local estructurada.
+
+== 7. Organización del trabajo (grupos de cinco)
+
+* El Core es compartido y será la base común de las sesiones prácticas.
+* Cada integrante asume como responsable principal una feature común (F1-F5).
+* Cada integrante propone una feature original y asume su desarrollo principal.
+* Las diez features deberán integrarse en el mismo proyecto y respetar las reglas del modelo.
+* El diagrama de características y la documentación deberán identificar responsables, dependencias y configuraciones válidas.
+
+== 8. Comprobaciones mínimas
+
+* La variante Base se ejecuta y permite crear, consultar, editar, cambiar de estado y eliminar libros, sin depender de otras features.
+* Se pueden activar las cinco features comunes, y cada una demuestra su comportamiento mínimo.
+* Desactivar una feature no impide gestionar libros con el Core.
+* La variante Completa integra también las cinco features originales.
+* Los datos del Core se conservan entre ejecuciones cuando se implemente la persistencia.
+* Se conserva un único repositorio por equipo y se evitan bifurcaciones «copiar y modificar» para las variantes.
+
+== 9. Secuencia docente prevista
+
+. Tras el brainstorming y la sesión 2 de introducción a la interfaz de usuario, fijar el alcance compartido de BookApp.
+. En la sesión 3, ver la demostración del profesor con *TaskApp Pro* y aplicar el modelado de características al producto del alumnado, *BookApp*.
+. Formalizar el diagrama de características y modelar los datos del Core.
+. Implementar las cinco features comunes y sus puntos de variación.
+. Integrar las características originales de los integrantes.
+. Validar variantes, persistencia, tests y automatización.
+
+La xref:session-3.adoc[sesión 3 de Modelado de Características] mantiene la demostración del profesor con TaskApp Pro. Los estudiantes realizan las actividades sobre BookApp, utilizando este documento como referencia de alcance.

@@ -1,15 +1,31 @@
-= Sesión 3: Diseño del Modelo y Diagrama de Características
+= Sesión 3: Modelos de Características y diseño del modelo Swift
+:lang: es
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+:icons: font
 
-Esta sesión se centra en una de las herramientas clave de la Ingeniería de Dominio: los **Modelos de Características** (Feature Models). Aprenderemos a capturar la variabilidad de nuestra línea de productos de una manera formal y visual.
+En esta sesión vamos a pasar de los requisitos de una familia de productos a un *Modelo de Características* formal. Después organizaremos el proyecto con el patrón *MVVM* y traduciremos las características principales a `struct` y `enum` de Swift. Usaremos *SwiftUI* para crear la primera versión de MVVM de TaskApp (Model, View y ViewModel), sin mezclar el modelo de datos con la interfaz.
 
-Utilizaremos este modelo como un plano para guiar el desarrollo, asegurar la coherencia entre los productos y, finalmente, traducirlo a código Swift.
+La demostración común sigue siendo *TaskApp Pro*, y la práctica del alumnado sigue siendo *BookApp*. Todos los grupos parten del xref:bookapp-modelo-comun.adoc[mismo núcleo y las cinco características comunes]; cada integrante incorporará posteriormente una característica original.
+
+[NOTE]
+====
+*Código de ejemplo:* https://github.com/uallps/TaskApp-SwiftCrossUI[uallps/TaskApp-SwiftCrossUI]. La etiqueta `sesion-3` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-SwiftCrossUI.git` y `git checkout sesion-3`.
+====
 
 ====
-.Objetivos de la sesión
-- **Comprender** qué es una característica y cómo se modela la variabilidad.
-- **Aplicar** la notación estándar de los Diagramas de Características.
-- **Diseñar** el Diagrama de Características formal para el proyecto grupal.
-- **Traducir** el diagrama a un modelo de datos inicial en Swift.
+.Objetivos de aprendizaje
+* Comprender las relaciones *obligatoria*, *opcional*, *OR*, *XOR* y las restricciones `requires` / `excludes`.
+* Dibujar y justificar un diagrama de características de TaskApp y otro de BookApp.
+* Diferenciar *Model*, *View* y *ViewModel* y organizar una arquitectura MVVM extensible.
+* Implementar los primeros `struct` y `enum` del Core en Swift.
+* Identificar qué parte es Swift puro y cuál corresponde a la interfaz (SwiftUI).
+====
+
+[NOTE]
+====
+*Tecnología de esta sesión:* la interfaz de la demostración se escribe con *SwiftUI*. El *Model* es Swift puro y no depende de ningún framework gráfico.
 ====
 
 == Teoría: Modelos de Características (Cap. 3 y 4)
@@ -169,6 +185,8 @@ note on link: La refrigeración líquida no es compatible con la opción macOS
 == Demostración: Diagrama de "TaskApp Pro" 👨‍🏫
 
 Vamos a aplicar esta teoría a nuestro proyecto de ejemplo, "TaskApp Pro". Basándonos en las características que definimos en la Sesión 1, construiremos su Diagrama de Características.
+
+NOTE: *TaskApp Pro es el ejemplo del profesor.* Los equipos no tienen que convertir TaskApp en su aplicación: deben utilizar los mismos pasos de modelado para BookApp y respetar el alcance común acordado. El XOR entre JSON y Core Data que se muestra en TaskApp es un ejemplo docente; la decisión de persistencia de BookApp todavía está pendiente.
 
 .Características de TaskApp Pro
 - **Obligatorias:** Título y Estado.
@@ -362,183 +380,546 @@ note on link: Los recordatorios requieren una fecha de vencimiento
 @enduml
 ----
 
-.Actividad: Diseño del Diagrama de Características (1h)
-****
 
-- **Revisad** el brainstorming de HabitApp.
-- **Identificad** las características principales de "HabitApp".
-- **Clasificadlas** como obligatorias, opcionales, alternativas o en grupos "or".
-- **Dibujad** el diagrama en papel o usando una herramienta online (como PlantUML).
-- **Añadid** al menos una restricción `requires` o `excludes` si tiene sentido en vuestro dominio.
+== Actividad 1: crear el modelo de características de BookApp (1 hora)
 
-****
+Ahora debéis hacer *el mismo análisis* que acabamos de ver con TaskApp Pro, pero sobre vuestro proyecto *BookApp*.
 
-=== Estructura de Directorios MVVM para "TaskApp Pro"
+Todos los grupos tienen un punto de partida común. Consultad también el xref:bookapp-modelo-comun.adoc[acuerdo de características de BookApp].
 
-Esta estructura organiza el proyecto siguiendo el patrón MVVM y está diseñada para soportar la arquitectura de Línea de Productos Software, separando el núcleo de la aplicación de las features opcionales (plugins).
+=== Núcleo y diez características variables
+
+[cols="1,3",options="header"]
+|===
+| Tipo | Características
+
+| *Obligatorio: Core*
+| Libro con identificador, título no vacío, autor opcional y estado de lectura; gestión de biblioteca (alta, consulta, edición, cambio de estado y eliminación) y persistencia local.
+
+| *F1: Progreso*
+| Total de páginas, página actual y porcentaje leído.
+
+| *F2: Notas y citas*
+| Anotaciones personales vinculadas a un libro.
+
+| *F3: Categorías*
+| Clasificación de libros y filtrado de la biblioteca.
+
+| *F4: Valoraciones y reseñas*
+| Puntuación de 1 a 5 estrellas y reseña personal.
+
+| *F5: Estadísticas*
+| Número total de libros y recuento por estado de lectura.
+
+| *Cinco originales*
+| Una característica diferente por cada integrante del equipo.
+|===
+
+Las características F1 a F5 son *opcionales en una variante del producto*, pero *obligatorias de implementar* a lo largo del curso en todos los equipos. Lo mismo ocurre con la característica original de cada integrante.
+
+No las modeléis como un grupo OR que exija seleccionar al menos una. Es importante que exista una configuración *BookApp Base = solo Core*.
+
+=== Diagrama de partida
+
+Este diagrama muestra *solo la estructura común*. Debéis completarlo con las cinco propuestas originales elegidas por vuestro grupo y documentar las restricciones justificadas.
+
+[plantuml]
+----
+@startuml
+title BookApp - Punto de partida común
+skinparam monochrome true
+top to bottom direction
+
+rectangle "BookApp" as App
+rectangle "Biblioteca (Core)" as Core
+rectangle "Título" as Title
+rectangle "Estado de lectura" as Status
+rectangle "Progreso (F1)" as F1
+rectangle "Notas y citas (F2)" as F2
+rectangle "Categorías (F3)" as F3
+rectangle "Valoraciones (F4)" as F4
+rectangle "Estadísticas (F5)" as F5
+rectangle "Original 1" as O1
+rectangle "Original 2" as O2
+rectangle "Original 3" as O3
+rectangle "Original 4" as O4
+rectangle "Original 5" as O5
+
+App --@ Core
+Core --@ Title
+Core --@ Status
+App --o F1
+App --o F2
+App --o F3
+App --o F4
+App --o F5
+App --o O1
+App --o O2
+App --o O3
+App --o O4
+App --o O5
+@enduml
+----
+
+El autor es un *atributo que puede estar vacío* en el Core. No lo confundáis con una feature opcional que se activa/desactiva para construir variantes diferentes.
+
+=== Comprobar restricciones y variantes
+
+Para cada restricción que propongáis, explicad *por qué existe*. Por ejemplo, un resumen de páginas leídas requiere información de progreso, pero las estadísticas mínimas de libros por estado pueden calcularse sin F1.
+
+Comprobad que vuestro diagrama permite:
+
+* *Base*: solo el Core.
+* *Común*: el Core con F1–F5 activadas.
+* *Completa*: el Core, F1–F5 y las cinco originales.
+
+[IMPORTANT]
+====
+En BookApp la *persistencia local es obligatoria*, pero aún no está cerrado si se empleará una tecnología común o una alternativa de proveedores. No copiéis automáticamente el XOR JSON / Core Data de TaskApp en el modelo final de BookApp.
+====
+
+*Entrega de esta actividad:* imagen del diagrama o fuente PlantUML con su explicación y propuestas de características originales.
+
+== Arquitectura del proyecto: organizar las piezas con MVVM
+
+Antes de programar, vamos a separar las responsabilidades. Esto permitirá reutilizar el modelo y las operaciones de TaskApp o BookApp aunque cambie el framework de interfaz.
+
+=== Qué significa Model — View — ViewModel
+
+[cols="1,2,2",options="header"]
+|===
+| Capa | Responsabilidad | Ejemplo de TaskApp
+
+| *Model (M)*
+| Datos y reglas del dominio; no conoce los controles de la interfaz.
+| `Task`, `Priority`.
+
+| *View (V)*
+| Dibuja controles y comunica acciones del usuario; no almacena por sí sola la lógica de negocio.
+| `TaskListView`, `TaskRowView`.
+
+| *ViewModel (VM)*
+| Contiene el estado de la pantalla, la colección y las operaciones; la View observa sus cambios.
+| `TaskListViewModel`.
+|===
+
+.Flujo MVVM en TaskApp
+[plantuml]
+----
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam roundCorner 5
+skinparam ArrowFontSize 11
+left to right direction
+
+actor "Usuario" as U
+
+package "View (SwiftUI)" as V {
+  rectangle "TaskListView\nTaskRowView" as View
+}
+
+package "ViewModel" as VM {
+  rectangle "TaskListViewModel\n@Observable, tasks" as ViewModel
+}
+
+package "Model" as M {
+  rectangle "Task\nPriority" as Model
+}
+
+U --> View : "1. pulsa «Completar»"
+View --> ViewModel : "2. llama a toggleCompletion(task)\n(closure)"
+ViewModel --> Model : "3. modifica la tarea"
+ViewModel ..> View : "4. el cambio en tasks se notifica;\nla View se redibuja"
+
+note bottom of Model
+  El Model no conoce
+  ni la View ni el ViewModel
+end note
+@enduml
+----
+
+La View *no* modifica las tareas: delega la acción en el ViewModel. El ViewModel es el único que cambia el Model y avisa del cambio; la View solo muestra el estado actual.
+
+Al final de esta sesión construiremos la primera versión de este flujo con la macro `@Observable` y `@State`, y la sesión 4 lo completará con el resto de operaciones y los feature flags.
+
+=== Estructura de directorios para TaskApp Pro
 
 ----
 TaskApp/
-├── 📁 Application/
-│   ├── 📄 TaskApp.swift               // Punto de entrada de la app (@main)
-│   └── 📄 AppConfig.swift             // GESTOR DE FEATURE FLAGS
-│
-├── 📁 Core/
-│   ├── 📁 Models/
-│   │   ├── 📄 Task.swift              // El modelo de datos principal (M)
-│   │   ├── 📄 Priority.swift         // Enum para la prioridad
-│   │   └── 📄 TaskState.swift         // Enum para el estado
-│   │
-│   ├── 📁 Views/
-│   │   ├── 📄 TaskListView.swift     // La vista principal que muestra la lista (V)
-│   │   └── 📄 TaskRowView.swift       // La vista para una sola fila en la lista (V)
-│   │
-│   └── 📁 ViewModels/
-│       └── 📄 TaskListViewModel.swift // Lógica y estado para TaskListView (VM)
-│
-├── 📁 Features/
-│   ├── 📁 DueDate/
-│   │   ├── 📁 Views/
-│   │   │   └── 📄 DatePickerView.swift
-│   │   └── 📁 .../
-│   │
-│   ├── 📁 Reminders/
-│   │   ├── 📁 Views/
-│   │   │   └── 📄 ReminderSettingsView.swift
-│   │   └── 📁 .../
-│   │
-│   └── 📁 .../ (Otras carpetas para cada feature)
-│
-├── 📁 Infrastructure/
-│   ├── 📁 Persistence/
-│   │   ├── 📄 StorageProvider.swift        // El protocolo ("enchufe")
-│   │   ├── 📄 JSONStorageProvider.swift     // Plugin 1
-│   │   └── 📄 SwiftDataStorageProvider.swift // Plugin 2
-│   │
-│   └── 📁 Plugins/
-│       ├── 📄 PluginRegistry.swift         // Registra todos los plugins activos
-│       ├── 📄 RowComponentPlugin.swift     // Protocolo para plugins de UI
-│       └── 📄 TaskDataObservingPlugin.swift // Protocolo para plugins de datos
-│
-└── 📁 Utils/
-    └── 📄 Date+Extensions.swift          // Helpers y extensiones
+├── 📄 Package.swift
+└── 📁 Sources/TaskApp/
+    ├── 📁 Application/
+    │   ├── 📄 TaskApp.swift               // Punto de entrada de la app (@main, WindowGroup)
+    │   └── 📄 AppConfig.swift             // Configuración de features
+    │
+    ├── 📁 Core/
+    │   ├── 📁 Models/
+    │   │   ├── 📄 Task.swift              // El modelo de datos principal (M)
+    │   │   └── 📄 Priority.swift          // Enum para la prioridad
+    │   │
+    │   ├── 📁 Views/
+    │   │   ├── 📄 TaskListView.swift      // La vista principal que muestra la lista (V)
+    │   │   └── 📄 TaskRowView.swift       // La vista para una sola fila en la lista (V)
+    │   │
+    │   └── 📁 ViewModels/
+    │       └── 📄 TaskListViewModel.swift // Lógica y estado para TaskListView (VM)
+    │
+    ├── 📁 Features/
+    │   ├── 📁 DueDate/
+    │   ├── 📁 Priorities/
+    │   └── 📁 Reminders/
+    │
+    └── 📁 Infrastructure/
+        ├── 📁 Persistence/
+        │   └── 📄 StorageProvider.swift   // El protocolo ("enchufe")
+        └── 📁 Plugins/
+            └── 📄 PluginRegistry.swift    // Registra los plugins activos
 ----
 
-==== Explicación de las Carpetas
+* `Application` configura la familia de productos y su punto de entrada.
+* `Core` contiene modelo, vistas básicas y ViewModels que deben funcionar sin las features.
+* `Features` reservará cada punto de variación independiente.
+* `Infrastructure` contendrá más adelante contratos para persistencia y plugins. *Las rutas son el diseño previsto; los archivos de plugins no tienen que crearse hoy*.
 
-📁 **Application**: Contiene la configuración global de la aplicación. Aquí vive el fichero `@main` que arranca todo y, muy importante, nuestro `AppConfig.swift`, el "cuadro de mandos" de los feature flags.
+== Demostración: traducir las características de TaskApp al modelo Swift
 
-📁 **Core**: Es el corazón de la aplicación, con la funcionalidad mínima que tendrán todos los productos. Está organizado siguiendo estrictamente MVVM:
+=== Paso 1. El núcleo obligatorio de TaskApp
 
-- **Models**: Las estructuras de datos principales (`Task`, `Priority`, etc.).
-- **Views**: Las vistas de SwiftUI que siempre estarán presentes (`TaskListView`).
-- **ViewModels**: La lógica que maneja esas vistas (`TaskListViewModel`).
-
-📁 **Features**: ¡Aquí es donde vive la LPS! Cada subcarpeta (`DueDate`, `Reminders`) es un módulo autocontenido que representa una feature opcional. Internamente, cada una puede seguir su propia mini-estructura MVVM.
-
-📁 **Infrastructure**: Es la "fontanería" que permite que todo funcione.
-
-- **Persistence**: Contiene el "contrato" (`StorageProvider`) y las dos implementaciones intercambiables (JSON y SwiftData).
-- **Plugins**: Aquí definimos las "interfaces" de nuestros plugins. El `PluginRegistry` es el cerebro que sabe qué plugins están "enchufados" en cada momento.
-
-📁 **Utils**: Una carpeta de utilidades para código reutilizable que no encaja en ningún otro sitio.
-
-=== Traducción a Modelo de Datos Swift
-
-Este diagrama nos sirve de guía para crear nuestras estructuras en Swift. Las características se convierten en propiedades de nuestros `structs`. Vamos a construir el modelo paso a paso, empezando por lo obligatorio, luego lo opcional, y finalmente la compilación condicional.
-
-==== Paso 1: Modelo Base Obligatorio
-Empezamos con la estructura base que representa las características obligatorias: un ID único, el título de la tarea y su estado de completitud.
+A partir del diagrama de TaskApp, el Model comienza con el título y el estado de finalización.
 
 [source,swift]
 ----
-struct Tarea {
-    let id: UUID = UUID()  <1>
-    var titulo: String
-    var completada: Bool = false  <2>
+import Foundation
+
+struct Task: Identifiable {
+    let id = UUID()
+    var title: String
+    var isCompleted: Bool = false
 }
 ----
-<1> **UUID**: Identificador Único Universal. `UUID()` genera un ID único cada vez que se crea una instancia de `Tarea`. Es `let` (inmutable) para asegurar que el ID no cambie nunca.
-<2> **Valor por defecto**: `= false` asigna `false` como valor inicial si no se especifica otro al crear la tarea. Indica que la tarea no está completada por defecto.
 
-Esta estructura define lo mínimo necesario para cualquier tarea en TaskApp Pro. El `id` es único e inmutable, `titulo` es requerido, y `completada` indica si la tarea está terminada.
+`UUID` identifica cada tarea de forma estable. El título es obligatorio, mientras que el estado tiene un valor inicial.
 
-==== Paso 2: Añadiendo Propiedades Opcionales
-Ahora añadimos las propiedades opcionales basadas en las características opcionales del diagrama. Usamos tipos opcionales (`?`) para representar que estas propiedades pueden no estar presentes.
+`Identifiable` es un protocolo de Swift que exige una propiedad `id` única y estable. Lo añadimos desde el principio porque la interfaz lo necesitará: `List` y `ForEach` usan ese `id` para saber qué fila es cuál, aunque cambien el título o el estado de la tarea. Por eso el `id` es `let` (la identidad no cambia) y no usamos el título ni la posición en el array.
+
+=== Paso 2. Incorporar datos opcionales
+
+Cuando el modelo necesite también fecha y prioridad, añadimos tipos opcionales:
 
 [source,swift]
 ----
-struct Tarea {
-    let id: UUID = UUID()
-    var titulo: String
-    var completada: Bool = false
-    var fechaVencimiento: Date?  <1>
-    var prioridad: Prioridad?  <2>
+import Foundation
+
+enum Priority: String, CaseIterable {
+    case low = "Baja"
+    case medium = "Media"
+    case high = "Alta"
 }
 
-enum Prioridad {
-    case baja, media, alta  <3>
+struct Task: Identifiable {
+    let id = UUID()
+    var title: String
+    var isCompleted: Bool = false
+    var dueDate: Date?
+    var priority: Priority?
 }
 ----
-<1> **Propiedad opcional**: `Date?` permite que `fechaVencimiento` sea `nil` si no se establece, representando una característica opcional.
-<2> **Propiedad opcional**: `Prioridad?` es opcional y usa el enum definido abajo.
-<3> **Enum**: Define los posibles valores para la prioridad, permitiendo solo `baja`, `media` o `alta`.
 
-Hemos añadido `fechaVencimiento` y `prioridad` como opcionales. El enum `Prioridad` define los posibles valores para la prioridad de una tarea.
+* `Date?` y `Priority?` permiten que *una tarea concreta* carezca de esos datos.
+* El diagrama de características, en cambio, decide si *una variante del producto* incorpora esas funciones.
+* Por eso *una propiedad opcional en Swift no es suficiente para implementar variabilidad de una LPS*.
 
-==== Paso 3: Compilación Condicional con `#if`
-Para representar cómo las características opcionales pueden activarse o desactivarse en diferentes productos, usamos directivas de compilación condicional. Esto permite incluir o excluir código basado en módulos disponibles.
+=== Paso 3. Diferenciar variabilidad en compilación y en ejecución
+
+Más adelante podremos decidir las características antes de compilar:
 
 [source,swift]
 ----
-struct Tarea {
-    let id: UUID = UUID()
-    var titulo: String
-    var completada: Bool = false
-    #if canImport(Fechas)  <1>
-    var fechaVencimiento: Date?
-    #endif
-    #if canImport(Prioridades)  <2>
-    var prioridad: Prioridad?
-    #endif
-}
-
-#if canImport(Prioridades)  <3>
-enum Prioridad {
-    case baja, media, alta
-}
+#if TASKAPP_DUE_DATE
+// Compilar el código de la característica Fecha de vencimiento.
 #endif
 ----
-<1> **Compilación condicional**: `#if canImport(Fechas)` incluye `fechaVencimiento` solo si el módulo `Fechas` está disponible, permitiendo variabilidad en el producto.
-<2> **Compilación condicional**: Similarmente, incluye `prioridad` solo si `Prioridades` está disponible.
-<3> **Compilación condicional del enum**: El enum `Prioridad` se define solo si el módulo `Prioridades` está disponible, evitando código innecesario.
 
-NOTE: Este uso de `#if canImport(...)` es un ejemplo simplificado para ilustrar la variabilidad en tiempo de compilación. En sesiones posteriores veremos técnicas más avanzadas para gestionar la variabilidad de productos. Aquí se trata de deshabilitar características opcionales en tiempo de compilación, excluyendo el código correspondiente si los módulos no están disponibles.
+Esa condición solo será verdadera si se proporciona la condición de compilación adecuada (por ejemplo, `-D TASKAPP_DUE_DATE`). No equivale a activar una funcionalidad en una pantalla mediante un botón.
 
+En la *sesión 4* introduciremos otra técnica, los *feature flags*, para controlar partes de la interfaz durante la ejecución.
 
-////
-// .Ejemplo de punto de partida para HabitApp
-// - **Raíz:** HabitApp
-// - **Obligatorias:** Nombre del Hábito, Registro de Cumplimiento.
-// - **Opcionales:** Notas, Categorías, Metas (ej. "hacerlo 30 días seguidos").
-// - **Alternativas:** Tipo de Hábito (Contador vs. Sí/No).
-// - **Restricción:** `Metas` requiere `Registro de Cumplimiento`.
-////
+== Primera versión de MVVM: Model, View y ViewModel
 
-.Actividad: Creación del Modelo de Datos en Swift (45 min)
-****
+Este apartado conecta el modelo con la interfaz y construye la *primera versión* de MVVM de TaskApp Pro: empezamos por el Model, creamos una View sencilla y después extraemos su estado a un ViewModel. Después añadimos dos operaciones (marcar y añadir una tarea). La sesión 4 lo completará con el resto de operaciones y los feature flags.
 
-- Cread un nuevo proyecto de Xcode o un Playground.
-- Traducid vuestro diagrama de características a `struct`s y `enums`.
-- Usad propiedades opcionales (`?`) para representar características opcionales.
-- No os preocupéis aún por la compilación condicional (`#if`), solo por definir la estructura de datos completa que necesitaréis.
-- Repartid la implementación de las `features` entre los miembros del equipo para las próximas sesiones.
+=== Paso 1. El Model
 
-**Entregable**
+Reutilizamos `Task` y `Priority` de la demostración anterior (con `title`, `isCompleted`, `dueDate` y `priority`). No contienen ningún código de interfaz.
 
-- Un documento (PDF o Markdown) que contenga:
-    - Una imagen o código PlantUML de vuestro Diagrama de Características de "HabitApp".
-    - El código Swift con los `struct`s y `enums` que modelan vuestro diagrama.
-- Subid el documento al repositorio Git de vuestro grupo.
+=== Paso 2. La View
 
-****
+Primero escribimos la vista con los datos *dentro de ella*, para ver qué problema resuelve el ViewModel.
+
+[source,swift]
+----
+import SwiftUI
+
+@main
+struct TaskApp: App {
+    var body: some Scene {
+        WindowGroup {
+            TaskListView()
+        }
+    }
+}
+
+struct TaskListView: View {
+    let tasks = [
+        Task(title: "Preparar clase"),
+        Task(title: "Revisar prácticas"),
+        Task(title: "Publicar materiales")
+    ]
+
+    var body: some View {
+        List(tasks) { task in
+            Text(task.title)
+        }
+    }
+}
+----
+
+`List` genera una fila por cada `Task`; puede hacerlo sin más parámetros porque `Task` es `Identifiable` (su `id` es el `UUID`). `WindowGroup` crea la ventana de la aplicación.
+
+El inconveniente es que la vista *posee los datos*: si más adelante hay que añadir, completar o borrar tareas, esa lógica acabaría dentro de la pantalla.
+
+=== Paso 3. El ViewModel
+
+Movemos la colección a una clase observable. Es el *ViewModel*: guarda el estado de la pantalla y avisa a la View cuando cambia.
+
+[source,swift]
+----
+import Observation
+
+@Observable
+final class TaskListViewModel {
+    var tasks: [Task] = [
+        Task(title: "Preparar clase"),
+        Task(title: "Revisar prácticas"),
+        Task(title: "Publicar materiales")
+    ]
+}
+----
+
+* `@Observable` es una macro del framework *Observation*: hace que la clase notifique cambios a las vistas que la usan.
+* No hace falta marcar cada propiedad: todas las propiedades almacenadas de la clase son observables, y la View se redibuja cuando cambia una que lee (aquí, `tasks`).
+
+=== Paso 4. Conectar la View con el ViewModel
+
+[source,swift]
+----
+struct TaskListView: View {
+    @State private var viewModel = TaskListViewModel()
+
+    var body: some View {
+        List(viewModel.tasks) { task in
+            Text(task.title)
+        }
+    }
+}
+----
+
+`@State` crea el ViewModel y lo mantiene mientras exista la vista, que se redibuja cuando cambia alguna propiedad observable que lee. La pantalla es idéntica, pero ahora los datos viven fuera de la vista: es la estructura de MVVM que usaremos a partir de ahora, y sobre ella añadimos las dos primeras operaciones.
+
+=== Paso 5. Marcar una tarea como completada
+
+La operación vive en el *ViewModel*; la View solo avisa de que el usuario ha pulsado.
+
+[source,swift]
+----
+@Observable
+final class TaskListViewModel {
+    var tasks: [Task] = [ /* ... */ ]
+
+    func toggleCompletion(id: UUID) {
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+        tasks[index].isCompleted.toggle()
+    }
+}
+----
+
+Recibe el `id`, no la posición en la lista, para no depender del orden en que se muestren las tareas. En la vista, cada fila lleva un botón que llama al ViewModel:
+
+[source,swift]
+----
+List(viewModel.tasks) { task in
+    HStack {
+        Button {
+            viewModel.toggleCompletion(id: task.id)
+        } label: {
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+        }
+        .buttonStyle(.plain)
+        Text(task.title)
+    }
+}
+----
+
+Al cambiar `isCompleted` dentro de `tasks`, la View se redibuja sola: no hay que decirle que se actualice.
+
+=== Paso 6. Añadir una tarea
+
+De momento la operación solo crea una tarea de ejemplo, sin pedir datos al usuario.
+
+[source,swift]
+----
+func addTask() {
+    tasks.append(Task(title: "Tarea de ejemplo"))
+}
+----
+
+Y un botón en la vista, debajo de la lista:
+
+[source,swift]
+----
+struct TaskListView: View {
+    @State private var viewModel = TaskListViewModel()
+
+    var body: some View {
+        VStack {
+            List(viewModel.tasks) { task in
+                // fila con el botón de completar
+            }
+            Button("Añadir tarea") {
+                viewModel.addTask()
+            }
+            .padding()
+        }
+    }
+}
+----
+
+El flujo es el del diagrama: la View llama al ViewModel, el ViewModel modifica el Model y la View se redibuja.
+
+[NOTE]
+====
+En la *sesión 4* completaremos la aplicación: añadir una tarea con el título que escriba el usuario, borrar, extraer la fila a una vista propia que reciba la acción mediante una *closure*, y el primer feature flag.
+====
+
+=== Comparativa: `ObservableObject` (antes) y `@Observable` (ahora)
+
+Hasta iOS 16 / macOS 13 el ViewModel se escribía con `ObservableObject` y `@Published`, del framework *Combine*. Desde Swift 5.9 (iOS 17 / macOS 14) se usa la macro `@Observable`, del framework *Observation*. El patrón MVVM es el mismo; cambia cómo se declara y cómo se enlaza.
+
+*Modelo anterior*
+
+[source,swift]
+----
+import Combine
+
+final class TaskListViewModel: ObservableObject {
+    @Published var tasks: [Task] = []
+}
+
+struct TaskListView: View {
+    @StateObject var viewModel = TaskListViewModel()
+    // ...
+}
+----
+
+*Modelo actual*
+
+[source,swift]
+----
+import Observation
+
+@Observable
+final class TaskListViewModel {
+    var tasks: [Task] = []
+}
+
+struct TaskListView: View {
+    @State private var viewModel = TaskListViewModel()
+    // ...
+}
+----
+
+[cols="2,3,3",options="header"]
+|===
+| Aspecto | Antes: `ObservableObject` | Ahora: `@Observable`
+
+| Framework
+| Combine
+| Observation
+
+| Declarar el ViewModel
+| `class X: ObservableObject`
+| `@Observable class X`
+
+| Propiedades observables
+| Cada una se marca con `@Published`.
+| Todas las propiedades almacenadas lo son. Para excluir una se usa `@ObservationIgnored`.
+
+| Quién crea y conserva el ViewModel en la View
+| `@StateObject`
+| `@State`
+
+| Pasarlo a una vista hija
+| `@ObservedObject`
+| Una propiedad normal (`let` o `var`). Si la hija necesita enlaces `$`, `@Bindable`.
+
+| Compartirlo por el entorno
+| `@EnvironmentObject`
+| `@Environment`
+
+| Cuándo se redibuja la View
+| Cuando cambia *cualquier* propiedad `@Published`, aunque la vista no la use.
+| Solo cuando cambia una propiedad que la vista *lee* en su `body`.
+
+| Versión mínima
+| iOS 13 / macOS 10.15
+| iOS 17 / macOS 14
+|===
+
+La idea clave: con `@Observable` hay menos anotaciones y la View se actualiza solo por lo que realmente muestra. Los repositorios y tutoriales anteriores a 2023 usan todavía `ObservableObject`, así que conviene reconocer ambas formas.
+
+== Actividad 2: listado de libros de BookApp con MVVM
+
+Aplicad a *BookApp* lo que hemos hecho con TaskApp. El punto de partida es el mismo para los seis grupos y está descrito en xref:bookapp-modelo-comun.adoc[BookApp: núcleo común y modelo de variabilidad].
+
+*Resultado esperado:* una pantalla con un listado de libros, equivalente al listado de tareas de la demostración, construida con sus tres piezas: Model, View y ViewModel.
+
+=== Qué hay que escribir
+
+. *Model, estado de lectura:* un tipo con tres valores posibles (pendiente, leyendo y terminado) que se pueda recorrer y mostrar con un texto legible.
+. *Model, libro:* un tipo con identificador único y estable, título, autor y estado de lectura. El título es obligatorio, el autor puede faltar y un libro nuevo empieza como pendiente. Debe poder identificarse de forma individual en una lista.
+. *ViewModel:* una clase `@Observable` que guarde la colección de libros de ejemplo (por ejemplo, tres) y avise a la vista cuando cambie.
+. *Boceto de F2–F5:* los tipos que necesitaría cada feature y su relación con el libro. Basta con las declaraciones; no hay que implementar todavía las funcionalidades.
+
+=== Comprobad vuestro diseño
+
+* ¿Qué campos del libro son obligatorios y cuáles opcionales? ¿Por qué?
+* ¿Quién guarda la colección de libros: la vista o el ViewModel? ¿Qué ocurre si más adelante hay que añadir o borrar libros?
+* ¿Podría el Core existir sin las notas, las categorías o las valoraciones? ¿Dónde se guardan entonces esos datos?
+* ¿Qué diferencia hay entre que el autor sea opcional y que F1 sea una característica opcional del producto?
+
+NOTE: En la sesión 4 añadiremos a este listado las operaciones (cambiar el estado, añadir, eliminar) y el primer feature flag.
+
+== Actividad final y entrega
+
+. Terminad el *diagrama de características* de BookApp con Core, F1–F5 y las cinco features originales.
+. Terminad el listado de libros con su Model, View y ViewModel, y los primeros modelos de datos asociados a alguna de las features.
+. Dibujad o cread en vuestro proyecto la estructura *Application / Core (Models, Views, ViewModels) / Features / Infrastructure*.
+. Indicad qué componente será responsable del listado y de modificar el estado de los libros.
+. Repartid las cinco features comunes entre los cinco integrantes y añadid una original por persona.
+. Subid al repositorio Git del grupo el documento (PDF/Markdown), PlantUML y código Swift.
+
+[cols="1,3",options="header"]
+|===
+| Comprobación | Evidencia que debe mostrar el grupo
+
+| Núcleo claro | Modelo del libro con título, autor y estado.
+| Variabilidad correcta | F1–F5 y las originales son opcionales e independientes.
+| MVVM implementada | El listado de libros separa Model, View y ViewModel.
+| Entregable | Diagrama, Swift y responsables en Git.
+|===
+
+[IMPORTANT]
+====
+*Para esta sesión no se pide una aplicación BookApp completa.* El éxito es tener un modelo común coherente y un listado de libros con MVVM, preparado para añadir operaciones y feature flags en la sesión 4.
+====

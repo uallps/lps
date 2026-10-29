@@ -1,15 +1,15 @@
-= Introducción a TaskApp Pro y primeros pasos con Swift
+= Introducción a TaskApp Pro
 
-Esta sesión tiene como objetivo introducir el proyecto TaskApp Pro, familiarizar a los estudiantes con el lenguaje de programación Swift y el entorno de desarrollo Xcode, sentando las bases para el desarrollo de aplicaciones iOS en las siguientes sesiones.
+Esta práctica introduce **TaskApp Pro**, el proyecto que utilizaremos como ejemplo durante la asignatura para aplicar de forma progresiva los conceptos de Ingeniería de Líneas de Productos Software.
 
-Además, se formarán los equipos de trabajo que colaborarán a lo largo del proyecto TaskApp Pro, definiendo funcionalidades iniciales y estableciendo una visión compartida del producto a desarrollar.
+Partiremos de una aplicación de tareas deliberadamente sencilla e iremos incorporando funcionalidad y variabilidad a medida que avance el curso.
 
 ====
 .Objetivos de la práctica
 - **Comprender** el concepto y alcance del proyecto **TaskApp Pro**.
-- **Configurar** el entorno de desarrollo (**Xcode**) y comprobar su funcionamiento.
-- **Escribir** y ejecutar código básico en **Swift**: variables, tipos y operadores.
-- **Formar** grupos de trabajo y comprender la dinámica y entregables del proyecto.
+- **Identificar** el núcleo común de una familia de aplicaciones de tareas.
+- **Distinguir** entre funcionalidad básica y funcionalidad opcional.
+- **Relacionar** el ejemplo con los conceptos de ámbito, activos y productos introducidos en Ingeniería de LPS.
 ====
 
 == Introducción a TaskApp Pro
@@ -44,8 +44,10 @@ Aquí es donde "**TaskApp Pro**" se convierte en una **Línea de Productos Softw
 | 📅 Fecha de Vencimiento | Opcional | Permite asignar un plazo a las tareas.
 | ❗️ Prioridad | Opcional | Permite organizar tareas por importancia.
 | 🔔 Recordatorios | Opcional | Configura notificaciones para no olvidar nada.
-| 💾 Persistencia | Alternativa | Se debe elegir entre JSON (simple) o Core Data (avanzado).
+| 💾 Persistencia | Decisión técnica | La forma concreta de almacenar los datos podrá variar entre productos.
 |===
+
+Por ahora solo distinguiremos claramente entre el **núcleo común** y las características **opcionales**. La clasificación formal de otros tipos de variabilidad se realizará más adelante, cuando introduzcamos los Diagramas de Características.
 
 Este será nuestro plano. A partir de él, podremos generar múltiples productos:
 

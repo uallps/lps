@@ -1,73 +1,94 @@
-= Sesión 1: ¡Arrancamos! Introducción a LPS y Swift
+= Sesión 1: Introducción a las LPS y primeros pasos con Swift
 
-== Objetivos de Aprendizaje
+Esta sesión combina las dos primeras horas de contenido de la asignatura con una primera práctica de programación en Swift.
 
-- Comprender el "problema" que resuelven las Líneas de Productos Software (LPS).
-- Conocer la terminología básica: LPS, variabilidad, producto.
-- Configurar el entorno de desarrollo (Xcode) y comprobar su funcionamiento.
-- Escribir y ejecutar código básico en Swift: variables, tipos y operadores.
-- Formar grupos de trabajo y comprender la dinámica y entregables del proyecto.
+Durante el **Grupo Docente** se trabajará el _Capítulo 1. Introducción a las LPS_ utilizando las transparencias de la asignatura. Esta página sirve como guía de la sesión y no pretende sustituir ni repetir el contenido de las diapositivas.
 
-== Contenido Teórico (Cap. 1)
+Durante el **Grupo de Trabajo** se configurará el entorno de desarrollo y se repasarán los elementos fundamentales de Swift mediante programas de consola. En esta sesión todavía no se utilizarán SwiftUI, SwiftCrossUI ni modelos de datos definidos mediante `struct`.
 
-=== Problemática
-- ¿Por qué es ineficiente clonar y modificar proyectos?
-- Costes de mantenimiento y la divergencia de código cuando no existe gestión de variabilidad.
-- Ejemplos breves de problemas reales: bugs replicados, parches divergentes, coste de evolución.
+====
+.Objetivos de la sesión
+- **Comprender** el problema que motiva la Ingeniería de Líneas de Productos Software.
+- **Identificar** los conceptos de producto, comunalidad, variabilidad, activos software y decisiones de producto.
+- **Comprender** el modelo básico de producción de una LPS.
+- **Reconocer** los principales beneficios tácticos y estratégicos de una LPS.
+- **Configurar** y comprobar un entorno de desarrollo Swift.
+- **Repasar** los fundamentos del lenguaje Swift mediante pequeños programas de consola.
+====
 
-=== Definiciones clave
-- Línea de Productos Software (LPS): conjunto de sistemas que comparten artefactos y se derivan a partir de una plataforma común.
-- Ingeniería de Dominio vs Ingeniería de Aplicación.
-- Variabilidad: puntos donde los productos pueden diferir (features, configuraciones).
+== Grupo Docente (2 h): Capítulo 1. Introducción a las LPS
 
-=== Beneficios de adoptar LPS
-- Reutilización a gran escala.
-- Reducción del time-to-market.
-- Mejora de calidad por centralizar correcciones y evoluciones.
+La parte teórica sigue las transparencias del **Capítulo 1**.
 
-== Demostración práctica del profesor (TaskApp 👨‍🏫)
+=== 1. Problemática
 
-* Presentación del proyecto ejemplo "TaskApp Pro": objetivos, alcance y variantes previstas.
-* Live coding en un Playground de Xcode:
-** Declarar variables y constantes (var / let).
-** Tipos básicos: String, Int, Bool, Date.
-** Operadores aritméticos y lógicos.
-** Uso de print() para depurar y comprobar valores. 
-* Crear un nuevo proyecto en Xcode: explicar la plantilla elegida, la estructura de carpetas y archivos (App, Scenes, Assets, Info.plist).
+Partiremos del problema que aparece cuando un producto software debe admitir múltiples variantes y evolucionar en el tiempo:
 
-[source,swift]
+* versiones y personalización;
+* evolución independiente de productos similares;
+* divergencia del código;
+* coordinación y mantenimiento;
+* producción en serie frente a personalización en serie.
+
+La cuestión central es cómo aprovechar los **elementos comunes** y, al mismo tiempo, gestionar de forma eficaz las **variaciones**.
+
+=== 2. Líneas de Productos Software y reutilización
+
+Introduciremos la Línea de Productos Software como una estrategia para desarrollar una familia de productos relacionados a partir de un conjunto común de activos.
+
+Se distinguirá especialmente entre:
+
+* reutilización oportunista;
+* reutilización planificada;
+* características comunes;
+* características variables;
+* ámbito o dominio de la línea de productos.
+
+=== 3. Modelo básico de una LPS
+
+El modelo básico que utilizaremos durante el curso puede resumirse como:
+
+[plantuml]
 ----
-// Fragmentos cortos demostrativos (se ejecutarán en Playground)
-let saludo: String = "¡Hola, LPS!"
-var contador: Int = 0
-contador += 1
-print(saludo, contador)
+@startuml
+left to right direction
+skinparam monochrome true
+
+rectangle "Activos\nSoftware" as Assets
+rectangle "Proceso de\nProducción" as Process
+rectangle "Productos\nSoftware" as Products
+rectangle "Decisiones de\nProducto" as Decisions
+
+Assets --> Process
+Decisions --> Process
+Process --> Products
+@enduml
 ----
 
-== Práctica guiada del alumno (HabitApp 👩‍💻👨‍💻)
+Los **activos software** constituyen los elementos reutilizables de la línea. Las **decisiones de producto** describen las elecciones realizadas para una variante concreta. El **proceso de producción** utiliza ambos para obtener un producto perteneciente a la familia.
 
-=== Organización de equipos
-- Formad grupos de 5 personas. Asignad rol inicial: coordinador, responsable técnico, documentación, testing, presentación.
+=== 4. Beneficios
 
-=== Setup
-- Todos instalan Xcode (versión mínima indicada por el profesor).
-- Cada miembro crea un proyecto "Hola Mundo" y confirma que puede ejecutar en simulador o dispositivo.
+Cerraremos el capítulo distinguiendo entre beneficios de ingeniería y beneficios estratégicos:
 
-=== Brainstorming y visión inicial
-- Definir conceptualmente la "HabitApp":
-    - ¿Cuál es el mínimo viable (MVP)?
-    - ¿Qué funcionalidades extra podrían añadirse?
-    - Identificar posibles puntos de variabilidad entre miembros: temas, sincronización en la nube, tipos de hábitos, notificaciones.
-- Documentad 2–3 ideas principales y tomad decisiones sobre la variabilidad inicial.
+* reducción del esfuerzo y coste medio por producto;
+* reducción del tiempo de creación y entrega;
+* mejora de la calidad;
+* capacidad para mantener un mayor número de productos;
+* mayor agilidad para alcanzar nuevos mercados;
+* mejor aprovechamiento de los recursos.
 
-== Entregable (al final de la sesión)
+La última parte del capítulo introduce además que una LPS tiene dimensiones **conceptuales, tecnológicas, metodológicas, organizativas y gerenciales**. Estos aspectos se desarrollarán en los temas posteriores.
 
-- Un documento (PDF o Markdown) con:
-    - Nombres del grupo y roles.
-    - Breve descripción (2–3 párrafos) de la visión de la "HabitApp".
-    - Lista de puntos de variabilidad identificados.
-- Fecha de entrega y formato acordado en clase.
+== Grupo de Trabajo (2 h): Entorno y fundamentos de Swift
 
-== Notas prácticas
-- Tiempo estimado de la sesión: 90–120 minutos.
-- Recursos: enlaces a la documentación de Swift, tutoriales de Xcode y el repositorio base del profesor (TaskApp).
+La práctica de hoy está dividida en dos documentos:
+
+* xref:session-1-configuracion.adoc[Configuración del entorno de desarrollo con Swift]
+* xref:session-1-practica.adoc[Introducción práctica a Swift]
+
+En los equipos del aula utilizaremos principalmente **Xcode y Playgrounds**. La terminal se utilizará como complemento para comprobar el compilador y entender que Swift puede ejecutarse también fuera de Xcode.
+
+Las instrucciones de Linux y Windows están disponibles para quienes utilicen su propio portátil o quieran reproducir el entorno de trabajo en casa.
+
+NOTE: El material de Swift contiene más ejercicios de los que necesariamente se realizarán durante las dos horas. Se avanzará hasta donde permita el tiempo disponible.

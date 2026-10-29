@@ -1,19 +1,60 @@
-= Configuración de Swift en otros sistemas operativos
+= Configuración del entorno de desarrollo con Swift
 
-Esta sesión complementa la introducción a Swift cubriendo la configuración del entorno de desarrollo en sistemas operativos distintos a macOS, como Linux y Windows. Aunque Xcode es el entorno principal para el desarrollo en el ecosistema Apple, Swift es un lenguaje de código abierto que se puede utilizar en otras plataformas para aprender, experimentar y desarrollar aplicaciones no específicas de Apple.
+Esta práctica complementa la introducción a Swift cubriendo la configuración del entorno que utilizaremos para ejecutar los primeros ejemplos del lenguaje.
+
+En el aula trabajaremos principalmente con **macOS y Xcode**. Se incluyen también instrucciones detalladas para Linux y Windows para quienes utilicen su propio portátil o quieran reproducir el entorno en casa.
 
 ====
 .Objetivos de la práctica
+- Comprobar el entorno Swift incluido con Xcode en macOS.
 - Instalar y configurar Swift en Linux y Windows.
 - Familiarizarse con herramientas de línea de comandos para Swift.
-- Ejecutar código Swift básico sin Xcode.
-- Comprender las limitaciones y alternativas para desarrollo en plataformas no-Apple.
+- Ejecutar código Swift tanto desde Xcode como desde la terminal.
+- Utilizar el compilador `swiftc` y el REPL como herramientas complementarias.
 ====
 
 == Introducción
-Swift está disponible para Linux y Windows a través del proyecto oficial de Swift en GitHub. Esto permite a los desarrolladores aprender el lenguaje y crear aplicaciones que no dependan de frameworks específicos de Apple. Sin embargo, para desarrollar aplicaciones iOS, macOS, watchOS o tvOS, se requiere macOS con Xcode.
+Swift es un lenguaje de código abierto y dispone de toolchains oficiales para **macOS, Linux y Windows**. En macOS, Xcode proporciona el entorno completo para desarrollar aplicaciones para las plataformas de Apple. En Linux y Windows podemos utilizar el mismo lenguaje y sus herramientas para programas de consola y otros tipos de aplicaciones multiplataforma.
 
-En esta sesión, aprenderemos a instalar Swift en Linux y Windows, y a utilizar herramientas básicas como el compilador `swiftc`, el REPL (Read-Eval-Print Loop) y el Swift Package Manager.
+En esta sesión utilizaremos herramientas básicas como el compilador `swiftc` y el REPL (_Read-Eval-Print Loop_). **Swift Package Manager se verá más adelante.**
+
+== Configuración en macOS
+
+=== Xcode y Playgrounds
+
+En los equipos del aula utilizaremos Xcode como entorno principal. Xcode incluye el toolchain de Swift necesario para compilar y ejecutar los ejemplos.
+
+Para comprobar el entorno:
+
+. Abre Xcode.
+. Selecciona **File > New > Playground...**.
+. Elige una plantilla vacía.
+. Escribe:
+
+[source,swift]
+----
+print("¡Hola, Swift!")
+----
+
+. Ejecuta el Playground y comprueba la salida.
+
+=== Comprobación desde la terminal
+
+La terminal es un complemento útil incluso cuando trabajamos con Xcode. Puedes consultar la versión incluida en el toolchain activo con:
+
+[source,bash]
+----
+xcrun swift --version
+----
+
+En muchos equipos también podrás ejecutar directamente:
+
+[source,bash]
+----
+swift --version
+----
+
+La salida concreta dependerá de la versión de Xcode instalada.
 
 == Configuración en Linux
 Linux es una plataforma bien soportada para Swift. Puedes instalar Swift utilizando paquetes precompilados o compilando desde el código fuente.
@@ -37,7 +78,7 @@ hash -r
 swiftly install latest
 ----
 
-La salida esperada durante la instalación podría ser similar a la siguiente:
+La salida esperada durante la instalación podría ser similar a la siguiente. La versión concreta puede cambiar conforme se publiquen nuevas versiones estables:
 [source,console]
 ----
 Welcome to swiftly, the Swift toolchain manager for Linux and macOS!
@@ -69,23 +110,17 @@ Installing swiftly in /home/frangarcj/.local/share/swiftly/bin/swiftly...
 Creating shell environment file for the user...
 Updating profile...
 Fetching the latest stable Swift release...
-Installing Swift 6.2.0
-                                                                                                                                                          Downloading Swift 6.2.0
-100% [=======================================================================================================================================================================================================================================================================================================================]
-Downloaded 959.5 MiB of 959.5 MiB
+Installing Swift 6.4.0
+Downloading Swift 6.4.0
+100% [================================================================]
 
 Verifying toolchain signature...
 Extracting toolchain...
-The global default toolchain has been set to `Swift 6.2.0`
-Swift 6.2.0 installed successfully!
-There are some dependencies that should be installed before using this toolchain.
-You can run the following script as the system administrator (e.g. root) to prepare
-your system:
-
-    apt-get -y install unzip gnupg2 libc6-dev libcurl4-openssl-dev libgcc-11-dev libpython3-dev libstdc++-11-dev libxml2-dev libz3-dev pkg-config python3-lldb-13 zlib1g-dev
+The global default toolchain has been set.
+Swift installed successfully!
 ----
 
-Ejecuta el comando anterior con `sudo` para instalar las dependencias necesarias en el sistema.
+Swiftly comprueba también las dependencias necesarias para la distribución instalada. Si falta alguna, sigue las instrucciones que muestre la propia herramienta. Es preferible hacerlo así a mantener una lista fija de paquetes, ya que cambia según la distribución y su versión.
 
 Si encuentras errores como paquetes no disponible, intenta actualizar la lista de paquetes con:
 [source,bash]
@@ -112,11 +147,7 @@ swift --version
 ----
 Deberías ver la versión de Swift instalada.
 
-[source,console]
-----
-Swift version 6.2 (swift-6.2-RELEASE)
-Target: x86_64-unknown-linux-gnu
-----
+La versión y el _target_ dependerán del toolchain y arquitectura instalados.
 
 === Usando el REPL
 El REPL de Swift te permite ejecutar código interactivamente. Ejecuta:
@@ -158,74 +189,65 @@ swiftc hola.swift
 ----
 
 == Configuración en Windows
-Windows tiene soporte limitado para Swift comparado con macOS y Linux. Actualmente, Swift se puede instalar en Windows a través de subsistemas o contenedores.
+Swift dispone actualmente de **toolchain nativo oficial para Windows**. Para los ejercicios de esta asignatura no es necesario utilizar WSL.
 
-=== Usando Windows Subsystem for Linux (WSL)
-La forma más recomendada es utilizar WSL para ejecutar una distribución de Linux dentro de Windows.
+=== Requisitos
 
-* Habilita WSL en Windows: Abre PowerShell como administrador y ejecuta:
+La instalación oficial utiliza **WinGet** y requiere las herramientas de C++ y el SDK de Windows proporcionados por Visual Studio 2022. También es recomendable habilitar el **Developer Mode** de Windows.
+
+=== Instalación de las dependencias de plataforma
+
+Abre PowerShell y ejecuta:
+
 [source,powershell]
 ----
-wsl --install -d Ubuntu-22.04
+winget install --id Microsoft.VisualStudio.2022.Community --exact --force --custom "--add Microsoft.VisualStudio.Component.Windows11SDK.22621 --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64" --source winget
 ----
 
-La salida esperada en la consola podría ser similar a la siguiente:
-[source,console]
+Este comando instala Visual Studio Community junto con los componentes necesarios para compilar programas Swift en Windows.
+
+=== Instalación del toolchain de Swift
+
+[source,powershell]
 ----
-Instalando: Ubuntu 22.04 LTS
-Se ha instalado Ubuntu 22.04 LTS.
-Iniciando Ubuntu 22.04 LTS...
-Installing, this may take a few minutes...
-Please create a default UNIX user account. The username does not need to match your Windows username.
-For more information visit: https://aka.ms/wslusers
-Enter new UNIX username: frangarcj
-New password:
-Retype new password:
-passwd: password updated successfully
-Installation successful!
+winget install --id Swift.Toolchain -e --source winget
 ----
 
-* Una vez instalado, sigue los pasos de instalación en Linux descritos anteriormente.
+Una vez terminada la instalación, cierra y vuelve a abrir PowerShell si fuera necesario para actualizar el entorno.
 
 === Verificación y uso
-Después de configurar WSL, puedes usar Swift como en Linux. Abre la terminal de WSL y verifica con `swift --version`.
+Comprueba que Swift está disponible:
 
-=== Limitaciones en Windows nativo
-Actualmente, no hay soporte nativo completo para Swift en Windows fuera de WSL. Para desarrollo avanzado, se recomienda usar macOS o Linux.
+[source,powershell]
+----
+swift --version
+----
 
-=== Instalando Visual Studio Code y WSL Remote
-Para una mejor experiencia de desarrollo en Windows con WSL, instala Visual Studio Code y la extensión WSL Remote.
+El mismo fichero `hola.swift` utilizado en Linux puede compilarse en Windows:
 
-* Descarga e instala Visual Studio Code desde https://code.visualstudio.com/
-* Abre VS Code e instala la extensión "WSL" desde el marketplace (busca "WSL" de Microsoft).
-* Para conectar a WSL: Abre la paleta de comandos (Ctrl+Shift+P) y selecciona "WSL: Connect to WSL using Distro". Elige la distribución instalada, como Ubuntu 22.04.
+[source,powershell]
+----
+swiftc hola.swift -o hola.exe
+.\hola.exe
+----
 
-Esto te permitirá editar archivos o usar la terminal de WSL directamente desde VS Code.
+=== Visual Studio Code
 
-== Swift Package Manager
-El Swift Package Manager (SPM) es una herramienta para gestionar dependencias y construir proyectos Swift. Está disponible en todas las plataformas soportadas.
+Para una experiencia de edición más completa fuera de Xcode puedes utilizar Visual Studio Code.
 
-=== Creando un proyecto simple
-* Crea un directorio para tu proyecto:
-[source,bash]
-----
-mkdir MiProyecto
-cd MiProyecto
-----
-* Inicializa un paquete:
-[source,bash]
-----
-swift package init --type executable
-----
-* Edita `Sources/main.swift` con tu código.
-* Construye y ejecuta:
-[source,bash]
-----
-swift build
-swift run
-----
+* Descarga e instala Visual Studio Code.
+* Instala la extensión oficial **Swift**.
+* Abre la carpeta que contiene tus ficheros `.swift`.
+* Puedes utilizar la terminal integrada para ejecutar `swift` y `swiftc`.
+
+La extensión oficial proporciona autocompletado, navegación, depuración y otras herramientas de desarrollo.
+
+La documentación oficial de instalación está disponible en https://www.swift.org/install/windows/[swift.org/install/windows].
 
 == Consideraciones finales
-- Para desarrollo de aplicaciones iOS/macOS, macOS con Xcode es esencial.
-- En Linux y Windows, puedes aprender Swift, crear herramientas de línea de comandos y aplicaciones server-side.
-- La comunidad Swift proporciona recursos adicionales en el sitio oficial: https://swift.org/
+- En el aula utilizaremos principalmente Xcode y Playgrounds.
+- La terminal permite ejecutar y compilar los mismos ejemplos fuera del IDE.
+- Linux utiliza Swiftly como gestor recomendado del toolchain.
+- Windows dispone de soporte nativo oficial y no necesita WSL para estos ejercicios.
+- Swift Package Manager se introducirá más adelante.
+- La comunidad Swift proporciona recursos actualizados en https://swift.org/[swift.org].
