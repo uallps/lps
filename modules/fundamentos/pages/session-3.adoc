@@ -11,7 +11,7 @@ La demostración común sigue siendo *TaskApp Pro*, y la práctica del alumnado 
 
 [NOTE]
 ====
-*Código de ejemplo:* https://github.com/uallps/TaskApp-SwiftCrossUI[uallps/TaskApp-SwiftCrossUI]. La etiqueta `sesion-3` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-SwiftCrossUI.git` y `git checkout sesion-3`.
+*Código de ejemplo:* https://github.com/uallps/TaskApp-2026[uallps/TaskApp-2026]. La etiqueta `sesion-3` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-2026.git` y `git checkout sesion-3`.
 ====
 
 ====
@@ -20,12 +20,13 @@ La demostración común sigue siendo *TaskApp Pro*, y la práctica del alumnado 
 * Dibujar y justificar un diagrama de características de TaskApp y otro de BookApp.
 * Diferenciar *Model*, *View* y *ViewModel* y organizar una arquitectura MVVM extensible.
 * Implementar los primeros `struct` y `enum` del Core en Swift.
+* Crear el proyecto en *Xcode* y con `Package.swift`, y dar de alta un paquete con cada uno, para que la misma app funcione en macOS, Linux y Windows.
 * Identificar qué parte es Swift puro y cuál corresponde a la interfaz (SwiftUI).
 ====
 
 [NOTE]
 ====
-*Tecnología de esta sesión:* la interfaz de la demostración se escribe con *SwiftUI*. El *Model* es Swift puro y no depende de ningún framework gráfico.
+*Tecnología de esta sesión:* la interfaz de la demostración se escribe con *SwiftUI*. En macOS se usa el SwiftUI de Apple desde Xcode; en Linux y Windows el mismo código se compila con https://github.com/uallps/SwiftOpenUI[SwiftOpenUI], una implementación de la API de SwiftUI sobre GTK 4 (Linux) y Win32 (Windows). El *Model* es Swift puro y no depende de ningún framework gráfico.
 ====
 
 == Teoría: Modelos de Características (Cap. 3 y 4)
@@ -541,14 +542,17 @@ end note
 
 La View *no* modifica las tareas: delega la acción en el ViewModel. El ViewModel es el único que cambia el Model y avisa del cambio; la View solo muestra el estado actual.
 
-Al final de esta sesión construiremos la primera versión de este flujo con la macro `@Observable` y `@State`, y la sesión 4 lo completará con el resto de operaciones y los feature flags.
+Al final de esta sesión construiremos la primera versión de este flujo con la macro `@Observable` y `@State`, y la sesión 4 le añadirá los feature flags.
 
 === Estructura de directorios para TaskApp Pro
 
 ----
 TaskApp/
-├── 📄 Package.swift
-└── 📁 Sources/TaskApp/
+├── 📁 TaskApp.xcodeproj                  // Proyecto de Xcode (macOS)
+├── 📄 Package.swift                      // Paquete para Linux y Windows: compila la carpeta TaskApp/
+├── 📁 Compat/SwiftUI/
+│   └── 📄 SwiftUI.swift                  // Solo Linux y Windows: `import SwiftUI` trae SwiftOpenUI
+└── 📁 TaskApp/                           // El código de la app, el mismo en los tres sistemas
     ├── 📁 Application/
     │   ├── 📄 TaskApp.swift               // Punto de entrada de la app (@main, WindowGroup)
     │   └── 📄 AppConfig.swift             // Configuración de features
@@ -581,6 +585,188 @@ TaskApp/
 * `Core` contiene modelo, vistas básicas y ViewModels que deben funcionar sin las features.
 * `Features` reservará cada punto de variación independiente.
 * `Infrastructure` contendrá más adelante contratos para persistencia y plugins. *Las rutas son el diseño previsto; los archivos de plugins no tienen que crearse hoy*.
+* `TaskApp.xcodeproj` y `Package.swift` son *dos formas de compilar la misma carpeta* `TaskApp/`: Xcode en macOS y Swift Package Manager en Linux y Windows. El código de la app no cambia.
+
+== Crear el proyecto: Xcode y `Package.swift`
+
+Todo el grupo debe poder compilar y ejecutar la app, tenga el sistema que tenga. Por eso el proyecto tiene dos «puertas de entrada» que comparten el mismo código, la carpeta `TaskApp/`:
+
+[cols="1,2,2",options="header"]
+|===
+| Sistema | Cómo se compila | Interfaz
+
+| macOS
+| Abrir `TaskApp.xcodeproj` en Xcode y pulsar ▶.
+| SwiftUI de Apple.
+
+| Linux
+| `swift run TaskApp` con `Package.swift` (hay que instalar antes GTK 4: `libgtk-4-dev` y `libfontconfig-dev`).
+| SwiftOpenUI con GTK 4.
+
+| Windows
+| `swift run TaskApp` con `Package.swift`.
+| SwiftOpenUI con Win32.
+|===
+
+Lo crea *una sola persona* del grupo y lo sube al repositorio; el resto lo clona. Al terminar esta sesión, la misma app se ve así en macOS y en Linux:
+
+[cols="1,1",frame=none,grid=none]
+|===
+a| .macOS (Xcode, SwiftUI de Apple)
+image::s3-taskapp-macos.png[TaskApp en macOS con una tarea completada y dos añadidas]
+a| .Linux (`swift run`, SwiftOpenUI con GTK 4)
+image::s3-taskapp-linux.png[TaskApp en Linux con una tarea completada y dos añadidas]
+|===
+
+=== Paso 1. Crear el proyecto en Xcode (macOS)
+
+. *File > New > Project…*, pestaña *Multiplatform*, plantilla *App*, y *Next*.
++
+image::s3-xcode-plantilla.png[Asistente de Xcode: plantilla App de Multiplatform, width=70%]
+
+. Rellenad las opciones y pulsad *Next*:
+** *Product Name:* `TaskApp` (`BookApp` en vuestro caso).
+** *Organization Identifier:* `es.ual`. El *Bundle Identifier* resultante es `es.ual.TaskApp`.
+** *Testing System:* `None` y *Storage:* `None` (los añadiremos más adelante).
++
+image::s3-xcode-opciones.png[Opciones del proyecto nuevo: TaskApp, es.ual, sin tests ni almacenamiento, width=70%]
+
+. Guardad el proyecto en la carpeta del repositorio. Xcode crea `TaskApp.xcodeproj` y la carpeta `TaskApp/` con `TaskAppApp.swift`, `ContentView.swift` y `Assets.xcassets`.
+. Organizad la carpeta `TaskApp/` con la estructura anterior: renombrad `TaskAppApp.swift` a `Application/TaskApp.swift`, borrad `ContentView.swift` y cread `Core/Models`, `Core/Views` y `Core/ViewModels`.
+. Elegid *My Mac* como destino (arriba, junto al nombre del scheme) y pulsad ▶.
+
+.El proyecto al terminar la sesión: carpetas en el navegador y, a la derecha, el target al que pertenece cada fichero (*Target Membership*)
+image::s3-xcode-proyecto.png[Proyecto TaskApp en Xcode con la estructura Application y Core]
+
+[TIP]
+====
+La carpeta `TaskApp/` es una *carpeta sincronizada* (Xcode 16 o posterior): todo fichero que se cree dentro, desde Xcode, desde Finder o desde la terminal de un compañero de Linux, forma parte de la app sin tener que añadirlo al proyecto. Por eso un `git pull` basta para ver los ficheros nuevos.
+====
+
+=== Paso 2. Dar de alta un paquete en Xcode
+
+Un *paquete* (_Swift package_) es una biblioteca que se descarga de un repositorio Git. En Xcode se da de alta así:
+
+. *File > Add Package Dependencies…*
+. Pegad la URL del repositorio en el buscador (arriba a la derecha), por ejemplo `https://github.com/uallps/SwiftOpenUI.git`.
+. Elegid la *Dependency Rule*: una versión (*Up to Next Major Version*), una rama (*Branch*, aquí `uallps`) o un commit concreto, y pulsad *Add Package*.
++
+image::s3-xcode-anadir-paquete.png[Add Package Dependencies con la URL de SwiftOpenUI y la rama uallps]
+
+. Xcode descarga el paquete y muestra sus *productos* (las bibliotecas que ofrece). En *Add to Target* elegid el target que usará cada uno, o *None* si no lo necesita, y pulsad *Add Package*.
++
+image::s3-xcode-productos-paquete.png[Elección de productos del paquete y del target al que se añaden]
+
+El paquete aparece en el proyecto, pestaña *Package Dependencies*, y en el target, sección *Frameworks, Libraries, and Embedded Content*. A partir de ahí se usa con `import NombreDelMódulo`. La versión exacta que se descargó queda anotada en `Package.resolved`, dentro de `TaskApp.xcodeproj`; subidla al repositorio para que todo el grupo use la misma.
+
+[NOTE]
+====
+En macOS *TaskApp no necesita SwiftOpenUI*: usa el SwiftUI de Apple, así que en el último paso pulsamos *Cancel*. La URL sirve de ejemplo; usaréis este mismo procedimiento cuando el proyecto necesite una biblioteca externa.
+====
+
+=== Paso 3. Dar de alta el paquete con `Package.swift` (Linux y Windows)
+
+Sin Xcode, el proyecto se describe con un fichero `Package.swift` en la raíz del repositorio. Swift Package Manager lo lee para saber qué compilar y qué paquetes descargar:
+
+[source,swift]
+----
+// swift-tools-version: 6.2
+// Paquete para Linux y Windows. Compila la MISMA carpeta TaskApp/ que usa Xcode // <1>
+// (en Mac se abre TaskApp.xcodeproj y se usa el SwiftUI de Apple).
+import PackageDescription
+
+#if os(Linux) // <2>
+let backend: Target.Dependency = .product(name: "BackendGTK4", package: "SwiftOpenUI")
+#elseif os(Windows)
+let backend: Target.Dependency = .product(name: "BackendWin32", package: "SwiftOpenUI")
+#else
+let backend: Target.Dependency? = nil
+#endif
+
+let package = Package(
+    name: "TaskApp",
+    dependencies: [
+        .package(url: "https://github.com/uallps/SwiftOpenUI.git", branch: "uallps"), // <3>
+    ],
+    targets: [
+        // Sustituye al SwiftUI de Apple: `import SwiftUI` trae SwiftOpenUI y su backend.
+        .target( // <4>
+            name: "SwiftUI",
+            dependencies: [.product(name: "SwiftOpenUI", package: "SwiftOpenUI")] + [backend].compactMap { $0 }, // <5>
+            path: "Compat/SwiftUI"
+        ),
+        // Mismos ajustes de Swift que el proyecto de Xcode.
+        .executableTarget( // <6>
+            name: "TaskApp",
+            dependencies: ["SwiftUI"],
+            path: "TaskApp", // <7>
+            exclude: ["Assets.xcassets"], // <8>
+            swiftSettings: [ // <9>
+                .swiftLanguageMode(.v5),
+                .defaultIsolation(MainActor.self),
+                .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+                .enableUpcomingFeature("InferIsolatedConformances"),
+                .enableUpcomingFeature("MemberImportVisibility"),
+            ]
+        ),
+    ]
+)
+----
+<1> La primera línea indica la versión mínima de Swift Package Manager que entiende este fichero y tiene que ir siempre la primera, sin nada más detrás.
+<2> Elige el *backend* de SwiftOpenUI según el sistema en el que se compila: GTK 4 en Linux y Win32 en Windows. En macOS no hay backend porque allí se usa Xcode.
+<3> *Dar de alta el paquete:* su URL y la regla de versión (`branch:`, `from: "1.0.0"`, `exact:`...). Equivale a *Add Package Dependencies…* en Xcode.
+<4> Un módulo propio que se llama `SwiftUI`, con un único fichero en `Compat/SwiftUI/` (lo vemos abajo).
+<5> *Elegir los productos del paquete* que usa este módulo: `SwiftOpenUI` y el backend del sistema. Equivale a *Add to Target* en Xcode.
+<6> El ejecutable de la app, que depende del módulo `SwiftUI` anterior.
+<7> Compila la carpeta de la app de Xcode, la misma que en macOS.
+<8> Deja fuera el catálogo de imágenes, que solo entiende Xcode.
+<9> Los mismos ajustes de Swift que el proyecto de Xcode (modo de lenguaje 5 y aislamiento por defecto en el hilo principal), para que el código compile igual en los dos sitios.
+
+Como el módulo de `Compat/SwiftUI/` se llama igual que el framework de Apple, el `import SwiftUI` del código recibe SwiftOpenUI sin cambiar una línea:
+
+[source,swift]
+----
+// Módulo "SwiftUI" para Linux y Windows: reexporta SwiftOpenUI, como el SwiftUI de
+// Apple reexporta Foundation, y arranca la app con el backend del sistema.
+@_exported import Foundation // <1>
+@_exported import SwiftOpenUI
+
+#if canImport(BackendGTK4) // <2>
+import BackendGTK4
+#elseif canImport(BackendWin32)
+import BackendWin32
+#endif
+
+// Permite `@main struct TaskApp: App`, igual que en Apple.
+extension App {
+    public static func main() { // <3>
+        #if canImport(BackendGTK4)
+        GTK4Backend().run(Self.self)
+        #elseif canImport(BackendWin32)
+        Win32Backend().run(Self.self)
+        #endif
+    }
+}
+----
+<1> `@_exported import` hace que quien escriba `import SwiftUI` reciba también Foundation y SwiftOpenUI, como si los hubiera importado directamente.
+<2> Importa el backend que se haya compilado: `canImport` es verdadero solo para el módulo que `Package.swift` eligió para este sistema.
+<3> `@main` necesita una función `main()` que arranque la app. En Apple la pone SwiftUI; aquí la añadimos nosotros y arranca la ventana con GTK 4 o con Win32.
+
+Para compilar y ejecutar:
+
+[source,shell]
+----
+sudo apt install libgtk-4-dev libfontconfig-dev    # solo Linux, una vez
+swift build                      # la primera vez descarga SwiftOpenUI y tarda unos minutos
+swift run TaskApp
+----
+
+La versión descargada queda anotada en `Package.resolved`, junto a `Package.swift`. Subidlo también al repositorio.
+
+[IMPORTANT]
+====
+En macOS usad siempre Xcode. `Package.swift` es para Linux y Windows: el módulo `SwiftUI` de `Compat/` está pensado para sustituir al de Apple solo donde no existe.
+====
 
 == Demostración: traducir las características de TaskApp al modelo Swift
 
@@ -647,7 +833,7 @@ En la *sesión 4* introduciremos otra técnica, los *feature flags*, para contro
 
 == Primera versión de MVVM: Model, View y ViewModel
 
-Este apartado conecta el modelo con la interfaz y construye la *primera versión* de MVVM de TaskApp Pro: empezamos por el Model, creamos una View sencilla y después extraemos su estado a un ViewModel. Después añadimos dos operaciones (marcar y añadir una tarea). La sesión 4 lo completará con el resto de operaciones y los feature flags.
+Este apartado conecta el modelo con la interfaz y construye la *primera versión* de MVVM de TaskApp Pro: empezamos por el Model, creamos una View sencilla y después extraemos su estado a un ViewModel. Después añadimos dos operaciones (marcar y añadir una tarea). La sesión 4 le añadirá los feature flags.
 
 === Paso 1. El Model
 
@@ -799,7 +985,7 @@ El flujo es el del diagrama: la View llama al ViewModel, el ViewModel modifica e
 
 [NOTE]
 ====
-En la *sesión 4* completaremos la aplicación: añadir una tarea con el título que escriba el usuario, borrar, extraer la fila a una vista propia que reciba la acción mediante una *closure*, y el primer feature flag.
+En la *sesión 4* extraeremos la fila a una vista propia que reciba la acción mediante una *closure* y añadiremos los primeros feature flags.
 ====
 
 === Comparativa: `ObservableObject` (antes) y `@Observable` (ahora)
@@ -904,7 +1090,7 @@ NOTE: En la sesión 4 añadiremos a este listado las operaciones (cambiar el est
 
 . Terminad el *diagrama de características* de BookApp con Core, F1–F5 y las cinco features originales.
 . Terminad el listado de libros con su Model, View y ViewModel, y los primeros modelos de datos asociados a alguna de las features.
-. Dibujad o cread en vuestro proyecto la estructura *Application / Core (Models, Views, ViewModels) / Features / Infrastructure*.
+. Cread el proyecto de BookApp como en el apartado _Crear el proyecto_: proyecto de Xcode, `Package.swift` y `Compat/SwiftUI/`, con la estructura *Application / Core (Models, Views, ViewModels) / Features / Infrastructure*. Comprobad que compila en el sistema de cada integrante (Xcode en macOS, `swift run` en Linux y Windows).
 . Indicad qué componente será responsable del listado y de modificar el estado de los libros.
 . Repartid las cinco features comunes entre los cinco integrantes y añadid una original por persona.
 . Subid al repositorio Git del grupo el documento (PDF/Markdown), PlantUML y código Swift.
@@ -916,6 +1102,7 @@ NOTE: En la sesión 4 añadiremos a este listado las operaciones (cambiar el est
 | Núcleo claro | Modelo del libro con título, autor y estado.
 | Variabilidad correcta | F1–F5 y las originales son opcionales e independientes.
 | MVVM implementada | El listado de libros separa Model, View y ViewModel.
+| Proyecto | BookApp abre en Xcode y arranca con `swift run` en Linux o Windows.
 | Entregable | Diagrama, Swift y responsables en Git.
 |===
 

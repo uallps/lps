@@ -4,7 +4,7 @@ Esta sesión combina las dos primeras horas de contenido de la asignatura con un
 
 Durante el **Grupo Docente** se trabajará el _Capítulo 1. Introducción a las LPS_ utilizando las transparencias de la asignatura. Esta página sirve como guía de la sesión y no pretende sustituir ni repetir el contenido de las diapositivas.
 
-Durante el **Grupo de Trabajo** se configurará el entorno de desarrollo y se repasarán los elementos fundamentales de Swift mediante programas de consola. En esta sesión todavía no se utilizarán SwiftUI, SwiftCrossUI ni modelos de datos definidos mediante `struct`.
+Durante el **Grupo de Trabajo** se configurará el entorno de desarrollo y se repasarán los elementos fundamentales de Swift mediante programas de consola. En esta sesión todavía no se utilizarán SwiftUI ni modelos de datos definidos mediante `struct`.
 
 ====
 .Objetivos de la sesión

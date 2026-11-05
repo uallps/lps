@@ -149,6 +149,17 @@ Deberías ver la versión de Swift instalada.
 
 La versión y el _target_ dependerán del toolchain y arquitectura instalados.
 
+=== Bibliotecas para la interfaz gráfica (desde la sesión 3)
+
+A partir de la sesión 3, TaskApp y BookApp tienen interfaz gráfica. En Linux se dibuja con GTK 4 a través de https://github.com/uallps/SwiftOpenUI[SwiftOpenUI], así que hay que instalar sus bibliotecas de desarrollo una vez:
+
+[source,bash]
+----
+sudo apt install libgtk-4-dev libfontconfig-dev
+----
+
+No hace falta para los programas de consola de las sesiones 1 y 2.
+
 === Usando el REPL
 El REPL de Swift te permite ejecutar código interactivamente. Ejecuta:
 [source,bash]
@@ -249,5 +260,6 @@ La documentación oficial de instalación está disponible en https://www.swift.
 - La terminal permite ejecutar y compilar los mismos ejemplos fuera del IDE.
 - Linux utiliza Swiftly como gestor recomendado del toolchain.
 - Windows dispone de soporte nativo oficial y no necesita WSL para estos ejercicios.
-- Swift Package Manager se introducirá más adelante.
+- Swift Package Manager se introduce en la sesión 3: con él, la misma app gráfica de Xcode se compila en Linux y Windows con SwiftOpenUI.
+- En Windows la interfaz gráfica usa Win32, que viene con el SDK de Windows instalado arriba: no hay que instalar nada más.
 - La comunidad Swift proporciona recursos actualizados en https://swift.org/[swift.org].

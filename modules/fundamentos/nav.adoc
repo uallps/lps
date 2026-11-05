@@ -7,5 +7,5 @@
 *** xref:session-2-practica.adoc[Práctica: definición inicial de BookApp]
 ** xref:session-3.adoc[Sesión 3: Diagramas de Características y Modelado con MVVM]
 *** xref:bookapp-modelo-comun.adoc[BookApp: núcleo y características comunes]
-** xref:session-4.adoc[Sesión 4: SwiftCrossUI y proyecto con varios productos]
+** xref:session-4.adoc[Sesión 4: Un proyecto, varios productos y feature flags]
 ** xref:session-5.adoc[Sesión 5: Navegación, paso de datos y Git Flow]
