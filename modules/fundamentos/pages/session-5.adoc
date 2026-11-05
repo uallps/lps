@@ -160,7 +160,7 @@ struct TaskDetailView: View {
 
 === Paso 2: la lista con navegación
 
-`TaskListView` mete la lista en un `NavigationStack`, convierte cada fila en un enlace al detalle y pasa los botones a la barra de la ventana. La fila se escribe en una función aparte, `taskRow(task:)`, como en el TaskApp de 2025. Además, cada fila tiene un menú contextual para borrar la tarea. El ViewModel gana tres métodos: borrar, leer una tarea por su `id` y sustituirla al editarla en el detalle.
+`TaskListView` mete la lista en un `NavigationStack`, convierte cada fila en un enlace al detalle y pasa los botones a la barra de la ventana. La fila se escribe en una función aparte, `taskRow(task:)`. Además, cada fila tiene un menú contextual para borrar la tarea. El ViewModel gana tres métodos: borrar, leer una tarea por su `id` y sustituirla al editarla en el detalle.
 
 [source,swift]
 ----

@@ -7,8 +7,6 @@
 
 Hasta ahora, al cerrar TaskApp se perdían las tareas y los ajustes. En esta sesión guardamos las tareas en un fichero JSON detrás de un *protocolo de almacenamiento*, añadimos una pantalla de *Ajustes* que comparte la configuración con la lista mediante el *entorno* (`environment`) y la conserva entre ejecuciones, y reunimos el aspecto de la app en un *tema* escrito con *extensiones*.
 
-Es lo que en el TaskApp de 2025 se hizo el 29 de octubre (persistencia, ajustes y navegación principal), adaptado a `@Observable`.
-
 [NOTE]
 ====
 *Código de ejemplo:* https://github.com/uallps/TaskApp-2026[uallps/TaskApp-2026]. La etiqueta `sesion-6` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-2026.git` y `git checkout sesion-6`.
@@ -238,7 +236,7 @@ final class TaskListViewModel {
     }
 }
 ----
-<1> `didSet` se ejecuta cada vez que cambia `tasks`, venga el cambio de donde venga: un botón, el menú contextual o el `Binding` del detalle. Por eso no hay que acordarse de guardar en cada método. En el TaskApp de 2025 se guardaba de otra forma: cada método del ViewModel llamaba a `saveTasks`, y el detalle recibía un `onSave` que se ejecutaba en `.onDisappear`, al volver a la lista. `didSet` reúne todo en un solo sitio.
+<1> `didSet` se ejecuta cada vez que cambia `tasks`, venga el cambio de donde venga: un botón, el menú contextual o el `Binding` del detalle. Por eso no hay que acordarse de guardar en cada método.
 <2> `@ObservationIgnored`: el almacenamiento no es estado de la pantalla; las vistas no tienen que redibujarse si cambia.
 <3> *Inyección de dependencias*: quien crea el ViewModel puede pasarle otro almacenamiento (el Mock en los tests).
 <4> La carga empieza al crear el ViewModel. `_Concurrency.Task` es la tarea asíncrona de Swift: el nombre completo evita confundirla con nuestro modelo `Task`.
