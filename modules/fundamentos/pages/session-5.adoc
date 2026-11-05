@@ -17,6 +17,7 @@ El ejemplo guiado del profesor es *TaskApp Pro* y el trabajo del alumnado se hac
 ====
 .Objetivos de aprendizaje
 * Navegar entre dos pantallas con `NavigationStack` y `NavigationLink`.
+* Borrar elementos con un menú contextual.
 * Pasar datos a una vista hija con `@Binding` y con `@Bindable`.
 * Mover acciones a la barra de la ventana con `.toolbar`.
 * Trabajar con ramas `feature/` según Git Flow en el repositorio del grupo.
@@ -87,7 +88,9 @@ Como en macOS es el SwiftUI de Apple y en Linux y Windows es SwiftOpenUI con la 
 | La vista hija *avisa* de una acción sin conocer a quien la gestiona (lo hicimos con la fila en la sesión 4).
 |===
 
-*`@Binding`.* La vista padre crea el binding y la hija lo recibe. `List($viewModel.tasks) { $task in ... }` da un binding por tarea; lo vemos en la demostración.
+*`@Binding`.* La vista padre crea el binding y la hija lo recibe. En la demostración, la lista lo construye con `binding(for:)`, que lee y escribe la tarea a través del ViewModel.
+
+*Cómo funciona un `Binding`.* Un `Binding<Task>` no guarda la tarea: guarda dos funciones, una para *leerla* (`get`) y otra para *escribirla* (`set`) allí donde vive. En TaskApp, `binding(for:)` las construye a mano: `get` llama a `viewModel.task(id:)` y `set` a `viewModel.updateTask(_:)`. El `$` también crea bindings: `$task.title` enlaza con el título de la tarea. El detalle lo recibe con `@Binding var task: Task`; cada letra que se escribe en el `TextField` pasa por el `set` hasta el ViewModel, y la lista, que observa el ViewModel, se redibuja. Con `let task: Task` el detalle tendría una *copia*: ni siquiera compilaría `$task.title`, porque no habría a dónde escribir.
 
 *`@Bindable`.* Si el dato es un objeto `@Observable`, se declara con `@Bindable` y se obtienen bindings de sus propiedades:
 
@@ -157,7 +160,25 @@ struct TaskDetailView: View {
 
 === Paso 2: la lista con navegación
 
-`TaskListView` mete la lista en un `NavigationStack`, convierte cada fila en un enlace al detalle y pasa los botones a la barra de la ventana:
+`TaskListView` mete la lista en un `NavigationStack`, convierte cada fila en un enlace al detalle y pasa los botones a la barra de la ventana. La fila se escribe en una función aparte, `taskRow(task:)`, como en el TaskApp de 2025. Además, cada fila tiene un menú contextual para borrar la tarea. El ViewModel gana tres métodos: borrar, leer una tarea por su `id` y sustituirla al editarla en el detalle.
+
+[source,swift]
+----
+func removeTask(id: UUID) {
+    tasks.removeAll { $0.id == id }
+}
+
+/// La tarea con ese id, si sigue en la lista.
+func task(id: UUID) -> Task? {
+    tasks.first { $0.id == id }
+}
+
+/// Sustituye la tarea que tiene el mismo id (la usa el detalle al editar).
+func updateTask(_ task: Task) {
+    guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+    tasks[index] = task
+}
+----
 
 [source,swift]
 ----
@@ -169,18 +190,12 @@ struct TaskListView: View {
 
     var body: some View {
         NavigationStack { // <1>
-            // $viewModel.tasks da un enlace a cada tarea para pasárselo al detalle.
-            List($viewModel.tasks) { $task in // <2>
-                NavigationLink(destination: TaskDetailView(task: $task)) { // <3>
-                    TaskRowView( // <4>
-                        task: task,
-                        showDueDates: config.showDueDates,
-                        showPriorities: config.showPriorities,
-                        toggleCompletion: { viewModel.toggleCompletion(id: task.id) }
-                    )
+            List {
+                ForEach(viewModel.tasks) { task in
+                    taskRow(task: task) // <2>
                 }
             }
-            .toolbar { // <5>
+            .toolbar { // <3>
                 Button("Fechas: \(config.showDueDates ? "Sí" : "No")") {
                     config.showDueDates.toggle()
                 }
@@ -193,17 +208,50 @@ struct TaskListView: View {
                     viewModel.addTask()
                 }
             }
-            .navigationTitle("Tareas") // <6>
+            .navigationTitle("Tareas") // <4>
         }
+    }
+
+    /// Una fila: enlace al detalle de la tarea, con menú contextual para borrarla.
+    private func taskRow(task: Task) -> some View {
+        NavigationLink(destination: TaskDetailView(task: binding(for: task))) { // <5>
+            TaskRowView( // <6>
+                task: task,
+                showDueDates: config.showDueDates,
+                showPriorities: config.showPriorities,
+                toggleCompletion: { viewModel.toggleCompletion(id: task.id) }
+            )
+            .contextMenu { // <7>
+                Button("Eliminar tarea") {
+                    viewModel.removeTask(id: task.id)
+                }
+            }
+        }
+    }
+
+    /// Un enlace (Binding) para que el detalle edite la tarea. No toca los datos:
+    /// leer y escribir se traducen a métodos del ViewModel.
+    private func binding(for task: Task) -> Binding<Task> {
+        Binding( // <8>
+            get: { viewModel.task(id: task.id) ?? task },
+            set: { viewModel.updateTask($0) }
+        )
     }
 }
 ----
 <1> La pila de pantallas. La lista es la primera; el detalle se empuja encima.
-<2> Con `$viewModel.tasks`, la lista entrega un *binding* `$task` por cada tarea además del valor `task`.
-<3> Cada fila es un enlace: al pulsarla, se empuja el detalle con el binding de *esa* tarea.
-<4> La fila de la sesión 4, sin cambios. El botón de marcar sigue funcionando dentro del enlace.
-<5> Los flags y «Añadir tarea» pasan a la barra de la ventana. El `#if Prioridades` funciona igual que en la sesión 4.
-<6> El título de la lista en la barra.
+<2> Cada tarea se dibuja con `taskRow(task:)`: el `body` queda corto y la fila se lee por separado.
+<3> Los flags y «Añadir tarea» pasan a la barra de la ventana. El `#if Prioridades` funciona igual que en la sesión 4.
+<4> El título de la lista en la barra.
+<5> Cada fila es un enlace: al pulsarla, se empuja el detalle con un *binding* a *esa* tarea.
+<6> La fila de la sesión 4, sin cambios. El botón de marcar sigue funcionando dentro del enlace.
+<7> Clic derecho sobre la fila: «Eliminar tarea». En escritorio es la forma de borrar (`.onDelete`, el deslizar de iOS, no tiene equivalente).
+<8> Un `Binding` hecho a mano: `get` pide la tarea al ViewModel y `set` le entrega la tarea editada. La vista no modifica el array: eso lo hace el ViewModel, como pide MVVM.
+
+[NOTE]
+====
+SwiftUI permite escribir lo mismo con `List($viewModel.tasks) { $task in ... TaskDetailView(task: $task) }`. Es correcto, pero el compilador de Swift 6.3 para Windows falla con un error interno al usar `$task` dentro de ese cierre. `binding(for:)` hace lo mismo y compila en los tres sistemas.
+====
 
 === Paso 3: probar los dos productos
 
@@ -212,7 +260,7 @@ No hay que tocar nada más: `TaskApp.swift` sigue creando `TaskListView()` y el 
 * *macOS:* elegid el scheme `TaskApp` o `TaskApp Prioridades` y pulsad ▶.
 * *Linux y Windows:* `swift run TaskApp` o `swift run --traits Prioridades TaskApp`.
 
-Comprobad: marcar una tarea desde la fila no abre el detalle; pulsar la fila sí; lo que se edita en el detalle aparece en la lista al volver.
+Comprobad: marcar una tarea desde la fila no abre el detalle; pulsar la fila sí; lo que se edita en el detalle aparece en la lista al volver; el clic derecho sobre una fila la borra.
 
 Preguntas para comentar: ¿quién es el dueño de la tarea que se edita? ¿Qué pasaría si `TaskDetailView` recibiera `let task: Task` en lugar de `@Binding`? ¿Por qué no hace falta ningún `#if` para la navegación?
 
@@ -245,7 +293,8 @@ Añadid a *BookApp* una pantalla de detalle y la navegación hasta ella, y traba
 === Qué hay que hacer
 
 . *Crear la vista de detalle del libro* en `Core/Views/`, con un `Form` que permita modificar al menos el título y el estado de lectura, y que reciba el libro con `@Binding`.
-. *Convertir el listado en navegación:* `NavigationStack`, una fila que sea `NavigationLink` al detalle y los botones en `.toolbar`.
+. *Convertir el listado en navegación:* `NavigationStack`, una fila (`bookRow(book:)`) que sea `NavigationLink` al detalle con `binding(for:)`, y los botones en `.toolbar`.
+. *Borrar libros* con un menú contextual en la fila y un método en el ViewModel.
 . *Comprobar* que lo que se edita en el detalle aparece en el listado al volver.
 . *Comprobar los dos productos* en vuestro sistema: los dos schemes en Xcode, o `swift run BookApp` y `swift run --traits Progreso BookApp`.
 . *Trabajar con ramas.* Cada miembro del equipo:

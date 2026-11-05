@@ -1,0 +1,488 @@
+= Sesión 6: Persistencia, ajustes compartidos y tema
+:lang: es
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+:icons: font
+
+Hasta ahora, al cerrar TaskApp se perdían las tareas y los ajustes. En esta sesión guardamos las tareas en un fichero JSON detrás de un *protocolo de almacenamiento*, añadimos una pantalla de *Ajustes* que comparte la configuración con la lista mediante el *entorno* (`environment`) y la conserva entre ejecuciones, y reunimos el aspecto de la app en un *tema* escrito con *extensiones*.
+
+Es lo que en el TaskApp de 2025 se hizo el 29 de octubre (persistencia, ajustes y navegación principal), adaptado a `@Observable`.
+
+[NOTE]
+====
+*Código de ejemplo:* https://github.com/uallps/TaskApp-2026[uallps/TaskApp-2026]. La etiqueta `sesion-6` contiene el estado del proyecto al terminar esta sesión: `git clone https://github.com/uallps/TaskApp-2026.git` y `git checkout sesion-6`.
+====
+
+====
+.Objetivos de aprendizaje
+* Separar *dónde* se guardan los datos del ViewModel con un protocolo y dos implementaciones (JSON y Mock).
+* Hacer el modelo `Codable` y guardar cada cambio, también los que se hacen en el detalle.
+* Guardar la configuración en `UserDefaults` para que se conserve al cerrar la app.
+* Compartir un objeto entre pantallas con `.environment` y `@Environment`, y editarlo con `@Bindable`.
+* Organizar la app con una barra lateral (`NavigationSplitView`): Tareas y Ajustes.
+* Escribir el tema de la app con *extensiones* y un `ViewModifier`.
+====
+
+Al terminar, la app tiene barra lateral con Tareas y Ajustes, y lo que se cambia se conserva al cerrar y volver a abrir:
+
+[cols="1,1",frame=none,grid=none]
+|===
+a| .Tareas (macOS)
+image::s6-macos-tareas.png[Tareas en macOS con barra lateral, sin fechas tras apagarlas en Ajustes]
+a| .Ajustes (macOS)
+image::s6-macos-ajustes.png[Pantalla de Ajustes en macOS]
+a| .Tareas (Linux)
+image::s6-linux-tareas.png[Tareas en Linux con barra lateral]
+a| .Ajustes (Linux)
+image::s6-linux-ajustes.png[Pantalla de Ajustes en Linux]
+|===
+
+== Teoría (30 min)
+
+=== La persistencia es un punto de variación
+
+El ViewModel no debe saber *dónde* se guardan las tareas. Para eso definimos un *protocolo* (el «enchufe») y tantas implementaciones como necesitemos:
+
+[cols="1,3",options="header"]
+|===
+| Pieza | Papel
+
+| `StorageProvider`
+| El protocolo: cargar y guardar tareas. Es lo único que conoce el ViewModel.
+
+| `JSONStorageProvider`
+| Guarda en un fichero `tasks.json`, en la carpeta Documentos del usuario. Funciona en los tres sistemas.
+
+| `MockStorageProvider`
+| Guarda en memoria. Para pruebas y vistas previas: no toca el disco.
+|===
+
+En el modelo de características, la persistencia es un punto de variación con *alternativas* (XOR): más adelante añadiremos SwiftData, que solo existe en Apple, como otra implementación del mismo protocolo.
+
+=== Compartir un objeto: el entorno
+
+La lista y los Ajustes tienen que usar *la misma* configuración: si en Ajustes se apagan las fechas, la lista debe dejar de mostrarlas. En lugar de pasar el objeto de vista en vista, se pone en el *entorno*:
+
+[cols="1,3",options="header"]
+|===
+| Paso | Cómo se escribe
+
+| Crear el objeto una vez
+| `@State private var config = AppConfig()` en la app.
+
+| Ponerlo en el entorno
+| `.environment(config)` sobre la vista que contiene a las demás.
+
+| Leerlo en cualquier vista de dentro
+| `@Environment(AppConfig.self) private var config`
+
+| Editarlo con `$`
+| `@Bindable var config = config` dentro del `body`.
+|===
+
+=== UserDefaults: las preferencias de la app
+
+`UserDefaults` es un almacén *clave → valor* que el sistema da a cada app para datos pequeños: ajustes, el último filtro elegido, si ya se vio la pantalla de bienvenida.
+
+[source,swift]
+----
+let defaults = UserDefaults.standard
+defaults.set(false, forKey: "showDueDates")                           // guardar
+let show = defaults.object(forKey: "showDueDates") as? Bool ?? true   // leer; si no hay nada, true
+----
+
+[cols="1,1",options="header"]
+|===
+| UserDefaults | Fichero JSON (StorageProvider)
+
+| Ajustes de la app
+| Los datos: las tareas
+
+| Valores sueltos
+| Listas y estructuras
+
+| Lo gestiona el sistema
+| Lo gestionamos nosotros
+|===
+
+Cada sistema lo guarda en un fichero de preferencias de la app: en macOS, un `.plist` en `Library/Preferences` (dentro del contenedor de la app); en Linux, `~/.config/TaskApp.plist`. `defaults.bool(forKey:)` devuelve `false` si la clave no existe, así que no distingue «apagado» de «nunca guardado»: por eso se lee con `object(forKey:)`. `@AppStorage` es UserDefaults para vistas.
+
+=== Extensiones
+
+Una *extensión* añade propiedades o métodos a un tipo que ya existe, sin tocar su código: `extension Color { static let taskAccent = … }`. Es la forma habitual de escribir el *tema* de una app en SwiftUI: colores y estilos en un solo fichero, que las vistas usan sin repetir modificadores.
+
+== Demostración: TaskApp con persistencia y Ajustes (1 h 15 min)
+
+Partimos de la sesión 5. Los ficheros nuevos van en `Infrastructure/Persistence/`, `Features/Settings/Views/` y `Application/`.
+
+=== Paso 1: el modelo, Codable
+
+[source,swift]
+----
+import Foundation
+
+/// Codable: la tarea se puede guardar y leer en JSON.
+struct Task: Identifiable, Codable { // <1>
+    var id = UUID() // <2>
+    var title: String
+    var isCompleted: Bool = false
+    var dueDate: Date?
+    var priority: Priority?
+}
+
+enum Priority: String, CaseIterable, Codable { // <3>
+    case low = "Baja"
+    case medium = "Media"
+    case high = "Alta"
+}
+----
+<1> `Codable` hace que Swift sepa convertir la tarea a JSON y leerla de vuelta, sin escribir código.
+<2> El `id` pasa de `let` a `var`: así también se guarda y se lee, y una tarea conserva su identidad entre ejecuciones.
+<3> La prioridad también tiene que ser `Codable`, porque forma parte de la tarea.
+
+=== Paso 2: el protocolo y sus dos implementaciones
+
+[source,swift]
+----
+/// Contrato de almacenamiento de tareas. El ViewModel solo conoce este protocolo,
+/// así que se puede cambiar dónde se guardan las tareas sin tocarlo.
+protocol StorageProvider { // <1>
+    func loadTasks() async throws -> [Task]
+    func saveTasks(tasks: [Task]) async throws
+}
+
+/// Guarda las tareas en un fichero JSON en la carpeta Documentos del usuario.
+final class JSONStorageProvider: StorageProvider {
+    private let fileURL: URL
+
+    init(filename: String = "tasks.json") {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first! // <2>
+        fileURL = documents.appendingPathComponent(filename)
+    }
+
+    func loadTasks() async throws -> [Task] {
+        let data = try Data(contentsOf: fileURL)
+        return try JSONDecoder().decode([Task].self, from: data) // <3>
+    }
+
+    func saveTasks(tasks: [Task]) async throws {
+        let data = try JSONEncoder().encode(tasks)
+        // La carpeta Documentos no existe en todos los sistemas (por ejemplo, un Linux mínimo).
+        try FileManager.default.createDirectory( // <4>
+            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: fileURL)
+    }
+}
+
+/// Almacenamiento en memoria, para pruebas y vistas previas: no escribe nada en disco.
+final class MockStorageProvider: StorageProvider { // <5>
+    private var storedTasks: [Task] = [
+        Task(title: "Tarea de prueba 1"),
+        Task(title: "Tarea de prueba 2", isCompleted: true)
+    ]
+
+    func loadTasks() async throws -> [Task] { storedTasks }
+    func saveTasks(tasks: [Task]) async throws { storedTasks = tasks }
+}
+----
+<1> El contrato: dos operaciones, asíncronas (`async`) porque leer y escribir en disco puede tardar, y que pueden fallar (`throws`).
+<2> La carpeta Documentos del usuario, en cualquier sistema.
+<3> `Codable` en acción: el JSON se convierte en `[Task]` en una línea.
+<4> En Linux puede no existir la carpeta Documentos: se crea antes de escribir.
+<5> La misma interfaz sin disco. Cambiar uno por otro no toca el ViewModel.
+
+=== Paso 3: el ViewModel carga y guarda
+
+[source,swift]
+----
+@Observable
+final class TaskListViewModel {
+    /// Cada cambio en la lista (marcar, añadir, borrar o editar en el detalle) se guarda.
+    var tasks: [Task] = [ /* las tres de ejemplo */ ] {
+        didSet { save() } // <1>
+    }
+
+    @ObservationIgnored private let storageProvider: StorageProvider // <2>
+    @ObservationIgnored private var loaded = false
+
+    /// Por defecto guarda en JSON; en pruebas se le pasa un MockStorageProvider.
+    init(storageProvider: StorageProvider = JSONStorageProvider()) { // <3>
+        self.storageProvider = storageProvider
+        _Concurrency.Task { await loadTasks() } // <4>
+    }
+
+    /// Carga las tareas guardadas, solo la primera vez que se llama.
+    /// Si aún no hay fichero, se quedan las tareas de ejemplo.
+    func loadTasks() async {
+        guard !loaded else { return }
+        loaded = true
+        do {
+            tasks = try await storageProvider.loadTasks()
+        } catch {
+            print("No se han cargado tareas: \(error)") // <5>
+        }
+    }
+
+    // toggleCompletion, addTask, removeTask, task(id:) y updateTask(_:): igual que en la sesión 5
+
+    private func save() {
+        let tasks = tasks
+        _Concurrency.Task {
+            do {
+                try await storageProvider.saveTasks(tasks: tasks)
+            } catch {
+                print("No se han guardado las tareas: \(error)")
+            }
+        }
+    }
+}
+----
+<1> `didSet` se ejecuta cada vez que cambia `tasks`, venga el cambio de donde venga: un botón, el menú contextual o el `Binding` del detalle. Por eso no hay que acordarse de guardar en cada método. En el TaskApp de 2025 se guardaba de otra forma: cada método del ViewModel llamaba a `saveTasks`, y el detalle recibía un `onSave` que se ejecutaba en `.onDisappear`, al volver a la lista. `didSet` reúne todo en un solo sitio.
+<2> `@ObservationIgnored`: el almacenamiento no es estado de la pantalla; las vistas no tienen que redibujarse si cambia.
+<3> *Inyección de dependencias*: quien crea el ViewModel puede pasarle otro almacenamiento (el Mock en los tests).
+<4> La carga empieza al crear el ViewModel. `_Concurrency.Task` es la tarea asíncrona de Swift: el nombre completo evita confundirla con nuestro modelo `Task`.
+<5> La primera vez no hay fichero: no es un error grave, se quedan las tareas de ejemplo.
+
+=== Paso 4: la configuración se guarda en UserDefaults
+
+[source,swift]
+----
+import Foundation
+import Observation
+
+@Observable
+final class AppConfig {
+    var showDueDates: Bool {
+        didSet { store(showDueDates, forKey: "showDueDates") } // <1>
+    }
+    var showPriorities: Bool {
+        didSet { store(showPriorities, forKey: "showPriorities") }
+    }
+
+    @ObservationIgnored private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        showDueDates = defaults.object(forKey: "showDueDates") as? Bool ?? true // <2>
+        showPriorities = defaults.object(forKey: "showPriorities") as? Bool ?? true
+    }
+
+    private func store(_ value: Bool, forKey key: String) {
+        defaults.set(value, forKey: key)
+        // En Linux y Windows, UserDefaults escribe en disco más tarde: lo forzamos ya.
+        defaults.synchronize() // <3>
+    }
+}
+----
+<1> Al cambiar un flag, se guarda con su nombre.
+<2> Al arrancar se lee lo guardado; si no hay nada (primera vez), el valor por defecto es `true`.
+<3> En Apple no hace falta; en Linux y Windows asegura que el valor llega al disco aunque la app se cierre de golpe.
+
+[NOTE]
+====
+`@AppStorage("showDueDates")` hace lo mismo con menos código, pero *solo funciona dentro de vistas o de clases `ObservableObject`*, no en una clase `@Observable`. Por eso aquí se escribe a mano.
+====
+
+=== Paso 5: compartir la configuración con el entorno
+
+La app crea la configuración y la barra lateral, y pone la configuración en el entorno:
+
+[source,swift]
+----
+@main
+struct TaskApp: App {
+    /// Una sola configuración para toda la app: la comparten Tareas y Ajustes.
+    @State private var config = AppConfig() // <1>
+    @State private var selection: String? = "tareas" // <2>
+
+    var body: some Scene {
+        WindowGroup {
+#if os(iOS)
+            TabView { // <3>
+                TaskListView()
+                    .tabItem { Label("Tareas", systemImage: "checklist") }
+                SettingsView()
+                    .tabItem { Label("Ajustes", systemImage: "gearshape") }
+            }
+            .environment(config)
+#else
+            NavigationSplitView { // <4>
+                List(selection: $selection) {
+                    NavigationLink(value: "tareas") {
+                        Label("Tareas", systemImage: "checklist")
+                    }
+                    NavigationLink(value: "ajustes") {
+                        Label("Ajustes", systemImage: "gearshape")
+                    }
+                }
+            } detail: {
+                switch selection { // <5>
+                case "tareas":
+                    TaskListView()
+                case "ajustes":
+                    SettingsView()
+                default:
+                    Text("Elige una opción")
+                }
+            }
+            .environment(config) // <6>
+#endif
+        }
+    }
+}
+----
+<1> La configuración se crea una sola vez, en la app.
+<2> Qué opción de la barra lateral está elegida. Empieza en Tareas.
+<3> En el iPhone no hay barra lateral: pestañas.
+<4> En escritorio (macOS, Linux y Windows): barra lateral a la izquierda y detalle a la derecha.
+<5> El detalle muestra la pantalla de la opción elegida.
+<6> Todo lo que hay dentro recibe la misma configuración por el entorno.
+
+La lista deja de crear su propio `AppConfig`, lo pide al entorno y conserva solo «Añadir tarea» en la barra:
+
+[source,swift]
+----
+struct TaskListView: View {
+    @State private var viewModel = TaskListViewModel()
+    /// La configuración la crea la app y llega por el entorno: es la misma que edita Ajustes.
+    @Environment(AppConfig.self) private var config // <1>
+    // body: igual que en la sesión 5, con solo «Añadir tarea» en .toolbar
+}
+----
+<1> `@Environment(Tipo.self)` busca en el entorno un objeto de ese tipo. Si nadie lo hubiera puesto, la app se pararía con un error claro.
+
+La pantalla de Ajustes edita esa misma configuración:
+
+[source,swift]
+----
+struct SettingsView: View {
+    @Environment(AppConfig.self) private var config
+
+    var body: some View {
+        @Bindable var config = config // <1>
+        Form {
+            Section(header: Text("Características")) {
+                Toggle("Mostrar fechas de vencimiento", isOn: $config.showDueDates) // <2>
+#if Prioridades
+                Toggle("Mostrar prioridades", isOn: $config.showPriorities) // <3>
+#endif
+            }
+        }
+        .navigationTitle("Ajustes")
+    }
+}
+----
+<1> `@Bindable` permite pedir bindings (`$`) a un objeto `@Observable` que llega del entorno.
+<2> El interruptor cambia el flag; la lista, que lee el mismo objeto, se redibuja; `AppConfig` lo guarda.
+<3> El ajuste de prioridades solo existe en el producto que las compila.
+
+=== Paso 6: el tema, con extensiones
+
+[source,swift]
+----
+// Application/Theme.swift: colores y estilos en un solo sitio.
+
+extension Color { // <1>
+    /// Color principal de TaskApp.
+    static let taskAccent = Color(red: 0.19, green: 0.38, blue: 0.58)
+}
+
+/// Estilo del texto secundario de las filas (fecha, prioridad).
+struct CaptionStyle: ViewModifier { // <2>
+    var color: Color = .secondary
+
+    func body(content: Content) -> some View {
+        content
+            .font(.caption)
+            .foregroundColor(color)
+    }
+}
+
+extension View { // <3>
+    func taskCaption(color: Color = .secondary) -> some View {
+        modifier(CaptionStyle(color: color))
+    }
+}
+
+#if Prioridades
+extension Priority { // <4>
+    var color: Color {
+        switch self {
+        case .low: return .green
+        case .medium: return .yellow
+        case .high: return .red
+        }
+    }
+}
+#endif
+----
+<1> Un color con nombre: en las vistas se escribe `.foregroundColor(.taskAccent)`.
+<2> Un `ViewModifier` agrupa varios modificadores en uno. Recibe el color como parámetro.
+<3> La extensión de `View` le da un nombre cómodo: `Text("…").taskCaption()`.
+<4> El color de cada prioridad pasa de la fila al tipo `Priority`, y solo existe en el producto con prioridades.
+
+En la fila, los modificadores repetidos se sustituyen por el tema:
+
+[source,swift]
+----
+Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+    .foregroundColor(.taskAccent)
+...
+Text("Vence: \(dueDate.formatted(date: .abbreviated, time: .shortened))")
+    .taskCaption()
+#if Prioridades
+Text("Prioridad: \(priority.rawValue)")
+    .taskCaption(color: priority.color) // <1>
+#endif
+----
+<1> El color va *dentro* del estilo. Si se añade `.foregroundColor` después de `.taskCaption()`, en Apple gana el color de dentro (el más cercano al texto) y la prioridad saldría gris.
+
+=== Paso 7: probarlo
+
+. Marcar una tarea, editar otra en el detalle y volver.
+. En Ajustes, apagar «Mostrar fechas de vencimiento» y volver a Tareas: no se ven fechas.
+. Cerrar la app y volver a abrirla: las tareas y el ajuste siguen como se dejaron.
+
+En macOS, con los dos schemes; en Linux y Windows, con `swift run TaskApp` y `swift run --traits Prioridades TaskApp`.
+
+== Actividad: persistencia y Ajustes en BookApp (1 h 45 min)
+
+=== Qué hay que hacer
+
+. *Libro `Codable`* (y el estado de lectura).
+. *`BookStorageProvider`* con dos implementaciones: JSON y Mock. El ViewModel del listado lo recibe en el `init`.
+. *Guardar cada cambio* con `didSet` y *cargar* al crear el ViewModel.
+. *Configuración en el entorno:* la app crea la configuración con los flags F1–F5, la pone en el entorno y la guarda en `UserDefaults`.
+. *Pantalla de Ajustes* con un interruptor por cada característica común, y barra lateral Libros / Ajustes.
+. *`Theme.swift`* con al menos un color y un estilo, usados en la fila del libro.
+
+=== Comprobad vuestro diseño
+
+* ¿Qué parte del código cambiaría si mañana guardarais los libros en SwiftData? ¿Y si cambia solo el nombre del fichero?
+* ¿Por qué el almacenamiento es `@ObservationIgnored`?
+* ¿Qué pasaría si la lista y los Ajustes crearan cada uno su propia configuración?
+* ¿Dónde vive el color de cada estado de lectura, y por qué ahí?
+
+== Entregable y criterios de revisión
+
+* El proyecto de BookApp con persistencia, Ajustes y tema, en los dos productos.
+* Dos capturas: Ajustes con un flag apagado y el listado reflejándolo *después de reiniciar la app*.
+* Un test o una vista previa que use el `MockStorageProvider`.
+
+[cols="1,3",options="header"]
+|===
+| Qué se evalúa | Qué debéis demostrar
+
+| *Persistencia*
+| Los libros y los ajustes se conservan al cerrar y abrir la app.
+
+| *Protocolo*
+| El ViewModel solo conoce el protocolo; JSON y Mock son intercambiables.
+
+| *Entorno*
+| Listado y Ajustes comparten una sola configuración.
+
+| *Tema*
+| Los estilos repetidos están en `Theme.swift`.
+|===

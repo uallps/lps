@@ -7,7 +7,7 @@
 
 En esta sesión vamos a pasar de los requisitos de una familia de productos a un *Modelo de Características* formal. Después organizaremos el proyecto con el patrón *MVVM* y traduciremos las características principales a `struct` y `enum` de Swift. Usaremos *SwiftUI* para crear la primera versión de MVVM de TaskApp (Model, View y ViewModel), sin mezclar el modelo de datos con la interfaz.
 
-La demostración común sigue siendo *TaskApp Pro*, y la práctica del alumnado sigue siendo *BookApp*. Todos los grupos parten del xref:bookapp-modelo-comun.adoc[mismo núcleo y las cinco características comunes]; cada integrante incorporará posteriormente una característica original.
+La demostración común sigue siendo *TaskApp Pro*, y la práctica del alumnado sigue siendo *BookApp*. Todos los grupos parten del xref:bookapp-modelo-comun.adoc[mismo núcleo y las cinco características comunes]; cada integrante incorporará posteriormente dos características originales.
 
 [NOTE]
 ====
@@ -388,7 +388,7 @@ Ahora debéis hacer *el mismo análisis* que acabamos de ver con TaskApp Pro, pe
 
 Todos los grupos tienen un punto de partida común. Consultad también el xref:bookapp-modelo-comun.adoc[acuerdo de características de BookApp].
 
-=== Núcleo y diez características variables
+=== Núcleo y quince características variables
 
 [cols="1,3",options="header"]
 |===
@@ -412,17 +412,17 @@ Todos los grupos tienen un punto de partida común. Consultad también el xref:b
 | *F5: Estadísticas*
 | Número total de libros y recuento por estado de lectura.
 
-| *Cinco originales*
-| Una característica diferente por cada integrante del equipo.
+| *Diez originales*
+| Dos características diferentes por cada integrante del equipo.
 |===
 
-Las características F1 a F5 son *opcionales en una variante del producto*, pero *obligatorias de implementar* a lo largo del curso en todos los equipos. Lo mismo ocurre con la característica original de cada integrante.
+Las características F1 a F5 son *opcionales en una variante del producto*, pero *obligatorias de implementar* a lo largo del curso en todos los equipos. Lo mismo ocurre con las dos características originales de cada integrante.
 
 No las modeléis como un grupo OR que exija seleccionar al menos una. Es importante que exista una configuración *BookApp Base = solo Core*.
 
 === Diagrama de partida
 
-Este diagrama muestra *solo la estructura común*. Debéis completarlo con las cinco propuestas originales elegidas por vuestro grupo y documentar las restricciones justificadas.
+Este diagrama muestra *solo la estructura común*. Debéis completarlo con las diez propuestas originales elegidas por vuestro grupo y documentar las restricciones justificadas.
 
 [plantuml]
 ----
@@ -472,7 +472,7 @@ Comprobad que vuestro diagrama permite:
 
 * *Base*: solo el Core.
 * *Común*: el Core con F1–F5 activadas.
-* *Completa*: el Core, F1–F5 y las cinco originales.
+* *Completa*: el Core, F1–F5 y las diez originales.
 
 [IMPORTANT]
 ====
@@ -1088,11 +1088,11 @@ NOTE: En la sesión 4 añadiremos a este listado las operaciones (cambiar el est
 
 == Actividad final y entrega
 
-. Terminad el *diagrama de características* de BookApp con Core, F1–F5 y las cinco features originales.
+. Terminad el *diagrama de características* de BookApp con Core, F1–F5 y las diez features originales.
 . Terminad el listado de libros con su Model, View y ViewModel, y los primeros modelos de datos asociados a alguna de las features.
 . Cread el proyecto de BookApp como en el apartado _Crear el proyecto_: proyecto de Xcode, `Package.swift` y `Compat/SwiftUI/`, con la estructura *Application / Core (Models, Views, ViewModels) / Features / Infrastructure*. Comprobad que compila en el sistema de cada integrante (Xcode en macOS, `swift run` en Linux y Windows).
 . Indicad qué componente será responsable del listado y de modificar el estado de los libros.
-. Repartid las cinco features comunes entre los cinco integrantes y añadid una original por persona.
+. Repartid las cinco features comunes entre los cinco integrantes y añadid dos originales por persona.
 . Subid al repositorio Git del grupo el documento (PDF/Markdown), PlantUML y código Swift.
 
 [cols="1,3",options="header"]

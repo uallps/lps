@@ -114,7 +114,30 @@ var tasks: [Task] = [
 
 ==== La fila, en una vista propia
 
-La fila de la sesión 3 crece (fecha, prioridad, tachado), así que la extraemos a `Core/Views/TaskRowView.swift`. Recibe la tarea, los flags y la acción, y *no conoce el ViewModel*:
+La fila de la sesión 3 crece (fecha, prioridad, tachado) y la lista se vuelve difícil de leer. La extraemos a su propia vista en tres pasos:
+
+. *Crear el `struct`* con lo que la fila necesita para dibujarse, como propiedades `let`: la tarea y los flags.
+. *Mover* el `HStack` de la lista al `body` de la vista nueva, tal cual.
+. *Sustituir* lo que llamaba al ViewModel (`viewModel.toggleCompletion(id:)`) por una propiedad de tipo *closure*, `toggleCompletion: () -> Void`. La lista le pasa qué hacer.
+
+Antes, la fila estaba dentro de la lista y llamaba al ViewModel:
+
+[source,swift]
+----
+List(viewModel.tasks) { task in
+    HStack {
+        Button {
+            viewModel.toggleCompletion(id: task.id)
+        } label: {
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+        }
+        .buttonStyle(.plain)
+        Text(task.title)
+    }
+}
+----
+
+Después, en `Core/Views/TaskRowView.swift`, recibe la tarea, los flags y la acción, y *no conoce el ViewModel*:
 
 [source,swift]
 ----
