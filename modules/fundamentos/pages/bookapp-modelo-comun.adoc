@@ -1,5 +1,9 @@
 = BookApp: núcleo común y modelo de variabilidad
 :revdate: 2026-10-22
+:lang: es
+:toc-title: Índice
+:figure-caption: Figura
+:table-caption: Tabla
 
 Este documento fija el alcance compartido de BookApp para la asignatura de Líneas de Productos Software (curso 2026-2027). Se ha elaborado después del brainstorming de los grupos MarkUp, inkd, BiblioGo, Lexi, ReadIT y Netanbook.
 
